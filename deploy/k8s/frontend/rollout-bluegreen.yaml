@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: ai-minutes-frontend
+  labels:
+    app: ai-minutes-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-minutes-frontend
+  template:
+    metadata:
+      labels:
+        app: ai-minutes-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  strategy:
+    blueGreen:
+      activeService: ai-minutes-frontend-active
+      previewService: ai-minutes-frontend-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-minutes-frontend-active
+spec:
+  selector:
+    app: ai-minutes-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-minutes-frontend-preview
+spec:
+  selector:
+    app: ai-minutes-frontend
+  ports:
+    - port: 80
+      targetPort: 80

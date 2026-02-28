@@ -1,0 +1,71 @@
+# =========================
+# AI-Minutes .gitignore
+# =========================
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Node / package artifacts
+node_modules/
+dist/
+build/
+.cache/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.kubeconfig
+kubeconfig
+
+# AWS / cloud credentials
+.aws/
+**/credentials
+**/config.local
+
+# Kubernetes local overrides / secrets
+*.secret.yaml
+*.secrets.yaml
+secrets.yaml
+
+# Docker local/runtime
+.docker/
+.docker-compose.override.yml
+*.tar
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Runtime temp
+tmp/
+temp/
+*.tmp
+
+# Frontend local env files
+frontend/.env
+frontend/.env.*
+
+# Terraform (if added later)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log

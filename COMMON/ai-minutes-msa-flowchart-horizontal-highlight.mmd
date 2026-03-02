@@ -1,62 +1,83 @@
 flowchart LR
 
-U[사용자 브라우저]:::user
+%% =======================
+%% INTERNET
+%% =======================
 
-subgraph AWS[ AWS Cloud ]
-direction LR
+USER[User Browser]
+IGW[Internet Gateway]
 
-subgraph FE[Frontend]
-F1[UI 화면]:::core
+%% =======================
+%% VPC
+%% =======================
+
+subgraph VPC
+
+subgraph Public_Subnet
+ALB[Application Load Balancer]
+NAT[NAT Gateway]
 end
 
-subgraph CORE[Core API]
-C1[Meeting 생성]:::core
-C2[상태 관리]:::core
-C3[Presigned URL 발급]:::core
+subgraph Private_Subnet
+
+subgraph ECS_Cluster
+FE[ECS Service - Frontend]
+CORE[ECS Service - Core API]
+AI[ECS Service - AI Worker]
 end
 
-subgraph STORAGE[Storage & Queue]
-S3[(S3)]:::aws
-SQS[(SQS)]:::aws
-DLQ[(DLQ)]:::fail
-RDS[(RDS)]:::aws
+RDS[(Amazon RDS)]
+SQS[(Amazon SQS)]
+DLQ[(Dead Letter Queue)]
 end
 
-subgraph AI[AI Processing]
-A1[SQS Polling]:::ai
-A2[TRANSCRIBING]:::core
-A3[AWS Transcribe]:::aws
-A4[SUMMARIZING]:::core
-A5[OpenAI 요약]:::ai
-A6[TODO 추출]:::core
-A7[OpenAI To-Do]:::ai
-end
+S3[(Amazon S3)]
+TRANS[AWS Transcribe]
+OPENAI[OpenAI API]
 
 end
 
-%% ===== Flow =====
+%% =======================
+%% CI/CD
+%% =======================
 
-U ==> F1
-F1 --> C1
-C1 --> RDS
-C1 --> C3
-C3 --> S3
+GHA[GitHub Actions]
+ECR[Amazon ECR]
 
-S3 --> C2
-C2 --> RDS
-C2 -.-> SQS
+%% =======================
+%% TRAFFIC FLOW
+%% =======================
 
-SQS -.-> A1
-A1 --> A2 --> A3
-A3 --> A4 --> A5
-A5 --> A6 --> A7
-A7 --> C2
+USER --> IGW
+IGW --> ALB
+ALB --> FE
+ALB --> CORE
 
-A1 -. 실패 .-> DLQ
+FE --> CORE
 
-%% ===== Style =====
-classDef core fill:#E8F1FF,stroke:#2563EB,color:#0F172A,stroke-width:2px;
-classDef aws fill:#FFF4E6,stroke:#F97316,color:#7C2D12,stroke-width:2px;
-classDef ai fill:#F3E8FF,stroke:#7C3AED,color:#2E1065,stroke-width:2px;
-classDef fail fill:#FEF2F2,stroke:#DC2626,color:#7F1D1D,stroke-width:2px;
-classDef user fill:#F1F5F9,stroke:#475569,color:#111827,stroke-width:2px;
+CORE --> RDS
+CORE --> S3
+CORE --> SQS
+
+SQS --> AI
+SQS --> DLQ
+
+AI --> TRANS
+AI --> OPENAI
+AI --> RDS
+
+%% =======================
+%% CI/CD FLOW
+%% =======================
+
+GHA --> ECR
+ECR --> FE
+ECR --> CORE
+ECR --> AI
+
+%% =======================
+%% OUTBOUND INTERNET
+%% =======================
+
+AI --> NAT
+NAT --> OPENAI

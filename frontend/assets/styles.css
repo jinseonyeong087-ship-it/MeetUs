@@ -66,9 +66,11 @@ html, body { margin: 0; background: var(--bg); color: var(--text); font-family: 
 .meeting-item h3, .todo-card h4, .summary-card h3 { margin: 0 0 6px; }
 
 .badge { font-size: 11px; font-weight: 700; border: 1px solid var(--line); padding: 3px 6px; }
-.status-UPLOADED, .status-TRANSCRIBING, .status-SUMMARIZING, .status-TODO_EXTRACTING { background: #e8edf4; color: #334155; }
+.status-CREATED, .status-UPLOADED, .status-PROCESSING { background: #e8edf4; color: #334155; }
 .status-COMPLETED { background: #e4f6ee; color: #0f766e; }
 .status-FAILED { background: #fbe8e8; color: #b91c1c; }
+.todo-status-open { background: #eef2ff; color: #334155; }
+.todo-status-completed { background: #e4f6ee; color: #0f766e; }
 
 .upload-zone { border: 1px dashed #9ca3af; background: #fafafa; padding: 14px; text-align: center; }
 .upload-zone.dragover { background: #f3f4f6; }

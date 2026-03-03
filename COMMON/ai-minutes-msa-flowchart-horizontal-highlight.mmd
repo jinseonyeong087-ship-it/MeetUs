@@ -23,12 +23,10 @@ subgraph Private_Subnet
 subgraph ECS_Cluster
 FE[ECS Service - Frontend]
 CORE[ECS Service - Core API]
-AI[ECS Service - AI Worker]
+AI[ECS Service - AI Processing]
 end
 
-RDS[(Amazon RDS)]
-SQS[(Amazon SQS)]
-DLQ[(Dead Letter Queue)]
+RDS[(Amazon RDS t3.micro)]
 end
 
 S3[(Amazon S3)]
@@ -57,14 +55,12 @@ FE --> CORE
 
 CORE --> RDS
 CORE --> S3
-CORE --> SQS
-
-SQS --> AI
-SQS --> DLQ
+CORE --> AI
 
 AI --> TRANS
 AI --> OPENAI
 AI --> RDS
+AI --> S3
 
 %% =======================
 %% CI/CD FLOW

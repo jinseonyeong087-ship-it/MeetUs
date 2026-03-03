@@ -14,7 +14,7 @@ mountUploadZone(uploadRoot);
 initMobileSidebar();
 
 function renderStats(meetings) {
-  const statuses = ['UPLOADED', 'TRANSCRIBING', 'SUMMARIZING', 'TODO_EXTRACTING', 'COMPLETED', 'FAILED'];
+  const statuses = ['CREATED', 'UPLOADED', 'PROCESSING', 'COMPLETED', 'FAILED'];
   statusStatsEl.innerHTML = '';
 
   statuses.forEach((status) => {

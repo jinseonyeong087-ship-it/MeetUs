@@ -36,7 +36,7 @@
 |---|---|
 | 서비스 범위 | 로그인 기반 회의 파일 업로드, 전사, 요약, 결정사항 추출, 개인별 To-Do 저장/조회 |
 | 사용자 범위 | 가입한 개인 사용자, 워크스페이스 초대 사용자 |
-| 운영 범위 | 단일 AWS 계정 내 ECS(Fargate) 기반 운영 |
+| 운영 범위 | 단일 AWS 계정 내 ECS(Fargate), ALB, CodeDeploy 기반 Blue-Green 운영 |
 | 제외 범위 | 실시간 녹음, EKS, HPA, Multi-AZ, dev/prod 분리 |
 
 ### 1.4 문서 해석 원칙
@@ -285,7 +285,7 @@ FAILED
 | 데이터 정합성 | 회의, transcript, 요약, To-Do 간 연결 보장 |
 | 비용 제어 | 팀당 월 5만원 이내 유지 |
 | 확장 전략 | 현 버전에서는 수평 오토스케일 미적용 |
-| 배포 전략 | Rolling Update |
+| 배포 전략 | ECS + ALB + CodeDeploy 기반 Blue-Green 배포 |
 
 ## 12. 트래픽 및 용량 기준
 
@@ -316,26 +316,52 @@ FAILED
 |---|---|
 | 컨테이너 오케스트레이션 | ECS(Fargate) |
 | 로드밸런서 | ALB 1개 |
+| Target Group | 2개 (`Blue`, `Green`) |
+| 트래픽 전환 제어 | ALB Listener + CodeDeploy |
 | 데이터베이스 | RDS `t3.micro` |
 | 파일 저장소 | S3 |
-| 배포 경로 | GitHub Actions -> ECR -> ECS |
+| 배포 경로 | GitHub Actions -> ECR -> CodeDeploy -> ECS |
 | 오토스케일 | HPA 없음 |
 | 고가용성 | Multi-AZ 없음 |
 | 환경 분리 | dev/prod 분리 없음 |
-| 배포 방식 | Rolling Update |
+| 배포 방식 | Blue-Green |
 
-### 13.2 인프라 구성 요소 표
+### 13.2 Blue-Green 구조 설명
+
+| 항목 | 기준 |
+|---|---|
+| 배포 슬롯 | ECS 서비스는 `Blue`와 `Green` 두 개의 Task Set을 사용한다 |
+| 정상 서비스 슬롯 | 현재 운영 트래픽을 받는 Task Set은 `Blue` 또는 `Green` 중 하나다 |
+| 신규 배포 슬롯 | 신규 버전은 현재 운영 슬롯이 아닌 반대 슬롯에 배포한다 |
+| Target Group 연결 | `Blue` Task Set은 `Blue Target Group`, `Green` Task Set은 `Green Target Group`에 각각 연결한다 |
+| 전환 주체 | 트래픽 전환은 ALB Listener 규칙을 CodeDeploy가 변경하여 수행한다 |
+| 롤백 방식 | 전환 실패 또는 배포 후 오류 발생 시 CodeDeploy가 이전 Target Group으로 즉시 복귀시킨다 |
+
+### 13.3 ALB + Target Group 2개 구조
 
 | 구성 요소 | 역할 |
 |---|---|
 | ALB | 단일 외부 진입점 |
-| Frontend Service | 사용자 UI 제공 |
-| Core API Service | 인증, 회의, 업로드, 조회, 상태 관리 |
-| AI Processing Service | 전사, 요약, To-Do 추출 처리 |
+| Production Listener | 현재 운영 Target Group으로 100% 트래픽 전달 |
+| Blue Target Group | 현재 또는 직전 안정 버전 Task Set 연결 |
+| Green Target Group | 신규 배포 버전 Task Set 연결 |
+| CodeDeploy | 신규 Task Set 생성, 헬스체크 확인, Listener 전환, 롤백 수행 |
+| ECS Frontend Service | 사용자 UI 제공 |
+| ECS Core API Service | 인증, 회의, 업로드, 조회, 상태 관리 |
+| ECS AI Processing Service | 전사, 요약, To-Do 추출 처리 |
 | RDS | 정형 데이터 저장 |
 | S3 | 원본 음성 파일 저장 |
 | ECR | 배포 이미지 저장소 |
 | GitHub Actions | 빌드 및 배포 자동화 |
+
+### 13.4 비용 기준 최소 구성
+
+| 항목 | 기준 |
+|---|---|
+| 기본 운영 구성 | ALB 1개, Target Group 2개, ECS(Fargate), RDS `t3.micro`, S3 |
+| Blue-Green 비용 원칙 | 추가 리소스는 배포 시점의 반대 슬롯 Task Set으로 한정한다 |
+| 상시 이중화 범위 | ALB와 Target Group 2개는 상시 유지한다 |
+| 비용 상한 | 팀당 월 5만원 이내를 유지한다 |
 
 ## 14. 배포 및 릴리스 기준
 
@@ -345,14 +371,40 @@ FAILED
 |---|---|
 | 1 | GitHub Actions에서 빌드 수행 |
 | 2 | 빌드된 이미지를 ECR에 푸시 |
-| 3 | ECS 서비스에 Rolling Update 배포 |
-| 4 | 배포 후 정상 응답 및 처리 흐름 확인 |
+| 3 | CodeDeploy가 ECS Green Task Set을 생성한다 |
+| 4 | Green Task Set을 `Green Target Group`에 연결하고 헬스체크를 검증한다 |
+| 5 | 검증 통과 시 ALB Production Listener를 `Blue Target Group`에서 `Green Target Group`으로 전환한다 |
+| 6 | 전환 완료 후 Green을 운영 슬롯으로 확정하고 기존 Blue Task Set을 종료한다 |
 
-### 14.2 배포 정책
+### 14.2 Blue-Green 트래픽 전환 흐름
+
+| 단계 | 설명 |
+|---|---|
+| 1 | 현재 운영 버전은 `Blue Target Group` 또는 `Green Target Group` 중 하나에서 서비스한다 |
+| 2 | 신규 버전은 운영 중이 아닌 반대 Target Group에 연결된 ECS Task Set으로 배포한다 |
+| 3 | ALB Listener는 배포 검증 완료 전까지 기존 운영 Target Group만 바라본다 |
+| 4 | CodeDeploy가 신규 Task Set의 헬스체크 통과를 확인한다 |
+| 5 | CodeDeploy가 ALB Production Listener의 전달 대상(Target Group)을 기존 슬롯에서 신규 슬롯으로 변경한다 |
+| 6 | Listener 전환 직후 신규 슬롯이 운영 트래픽 100%를 수신한다 |
+
+### 14.3 롤백 절차
+
+| 단계 | 설명 |
+|---|---|
+| 1 | 배포 중 헬스체크 실패, 애플리케이션 오류, 배포 검증 실패가 발생하면 롤백을 즉시 수행한다 |
+| 2 | CodeDeploy는 ALB Production Listener를 직전 안정 Target Group으로 즉시 복구한다 |
+| 3 | 직전 안정 Task Set은 기존 운영 상태로 복귀한다 |
+| 4 | 실패한 신규 Task Set은 중지 또는 폐기 대상으로 처리한다 |
+| 5 | 배포 실패 이력은 배포 로그와 운영 로그에 기록한다 |
+
+### 14.4 배포 정책
 
 | 항목 | 기준 |
 |---|---|
-| 배포 방식 | Rolling Update |
+| 배포 방식 | Blue-Green |
+| 배포 제어 | CodeDeploy가 ECS Task Set 생성과 ALB Listener 전환을 관리한다 |
+| 트래픽 구조 | ALB Listener가 `Blue Target Group`과 `Green Target Group` 중 하나로만 운영 트래픽을 전달한다 |
+| 즉시 롤백 | 가능 |
 | 환경 수 | 단일 환경 |
 | 승인 구조 | 팀 운영 정책에 따르되 문서상 별도 분리 없음 |
 
@@ -371,7 +423,7 @@ FAILED
 | Transcribe 사용량 제한 | 외부 처리 비용 통제 |
 | 파일 30MB 제한 | 업로드/처리 비용 상한 설정 |
 | Retry 최대 3회 제한 | 실패 처리 비용 폭증 방지 |
-| 단일 ALB 및 소형 RDS | 인프라 기본 비용 최소화 |
+| 단일 ALB, Target Group 2개, 소형 RDS | Blue-Green 적용 시 인프라 기본 비용 최소화 |
 
 ## 16. 보안 및 접근 통제 기준
 
@@ -482,9 +534,12 @@ MeetingStatus
 | 저장 대상 | 원본 음성 파일, transcript, 요약문, 결정사항, To-Do |
 | 비저장 대상 | AI raw 응답 전체 JSON |
 | 트래픽 가정 | 워크스페이스 5개, 하루 총 15건, 동시 업로드 3~5건, 동시 API 10건 |
-| 인프라 | ECS(Fargate), ALB 1개, RDS `t3.micro`, S3 |
-| 배포 | GitHub Actions -> ECR -> ECS |
-| 배포 방식 | Rolling Update |
+| 인프라 | ECS(Fargate), ALB 1개, Target Group 2개, RDS `t3.micro`, S3, CodeDeploy |
+| Target Group | `Blue`, `Green` |
+| 트래픽 전환 | ALB Production Listener가 `Blue`와 `Green` 간 전환 |
+| 배포 | GitHub Actions -> ECR -> CodeDeploy -> ECS |
+| 배포 방식 | Blue-Green |
+| 롤백 | CodeDeploy 기반 즉시 롤백 가능 |
 | 미적용 항목 | EKS, HPA, Multi-AZ, dev/prod 분리 |
 | 비용 상한 | 팀당 월 5만원 이내 |
-| 비용 통제 수단 | Transcribe 제한, 30MB 제한, Retry 3회 제한 |
+| 비용 통제 수단 | Transcribe 제한, 30MB 제한, Retry 3회 제한, Blue-Green 최소 구성 유지 |

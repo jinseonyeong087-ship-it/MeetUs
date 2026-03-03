@@ -3,7 +3,8 @@ export function mountUploadZone(rootElement) {
   container.className = 'upload-zone';
   container.innerHTML = `
     <p><strong>Drag & Drop</strong> 또는 클릭해서 파일 선택</p>
-    <input type="file" id="file-input" hidden />
+    <p class="muted">지원 포맷: m4a / 최대 30MB / Presigned URL 업로드 기준</p>
+    <input type="file" id="file-input" accept=".m4a,audio/mp4" hidden />
     <button class="btn" id="select-file-btn">파일 선택</button>
     <div class="progress-wrap hidden" id="progress-wrap">
       <div class="progress-bar" id="progress-bar"></div>
@@ -38,7 +39,21 @@ export function mountUploadZone(rootElement) {
 
   function handleFiles(files) {
     if (!files || files.length === 0) return;
-    startMockUpload(files[0].name);
+    const file = files[0];
+
+    if (!file.name.toLowerCase().endsWith('.m4a')) {
+      progressWrap.classList.add('hidden');
+      progressText.textContent = 'm4a 파일만 업로드할 수 있습니다.';
+      return;
+    }
+
+    if (file.size > 30 * 1024 * 1024) {
+      progressWrap.classList.add('hidden');
+      progressText.textContent = '파일 크기는 30MB 이하여야 합니다.';
+      return;
+    }
+
+    startMockUpload(file.name);
   }
 
   selectBtn.addEventListener('click', () => fileInput.click());

@@ -17,9 +17,9 @@ export const mockMeetings = [
     id: 'mtg-002',
     title: '고객 인터뷰 회고',
     date: '2026-02-28T14:00:00+09:00',
-    status: 'SUMMARIZING',
+    status: 'PROCESSING',
     participants: ['수연', '태훈'],
-    summary: '고객 pain point 정리 중입니다.',
+    summary: '전사 및 요약 처리 중입니다.',
     todos: [
       { assignee: '수연', task: '인터뷰 인사이트 문서화', dueDate: '2026-03-02', done: false }
     ]
@@ -35,11 +35,11 @@ export const mockMeetings = [
   },
   {
     id: 'mtg-004',
-    title: '백로그 정리',
+    title: '신규 회의 초안',
     date: '2026-02-28T18:00:00+09:00',
-    status: 'TODO_EXTRACTING',
+    status: 'CREATED',
     participants: ['지현', '영호', '수연'],
-    summary: '할 일 추출 중입니다.',
+    summary: '회의 생성 후 업로드 대기 중입니다.',
     todos: []
   },
   {

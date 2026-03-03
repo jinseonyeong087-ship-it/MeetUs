@@ -1,30 +1,25 @@
 # 상태 흐름도 (AA)
 
 ## 회의 처리 상태
-- DRAFT
-- AUDIO_UPLOADED
-- TRANSCRIBING
-- TRANSCRIBED
-- SUMMARIZING
+- CREATED
+- UPLOADED
+- PROCESSING
 - COMPLETED
 - FAILED
 
 ## Mermaid State Diagram
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT
-    DRAFT --> AUDIO_UPLOADED: 오디오 업로드 완료
-    AUDIO_UPLOADED --> TRANSCRIBING: 전사 작업 시작
-    TRANSCRIBING --> TRANSCRIBED: 전사 성공
-    TRANSCRIBING --> FAILED: 전사 실패
-    TRANSCRIBED --> SUMMARIZING: 요약 작업 시작
-    SUMMARIZING --> COMPLETED: 요약/추출 성공
-    SUMMARIZING --> FAILED: 요약 실패
-    FAILED --> TRANSCRIBING: 재시도(전사)
-    FAILED --> SUMMARIZING: 재시도(요약)
+    [*] --> CREATED
+    CREATED --> UPLOADED: 오디오 업로드 완료
+    UPLOADED --> PROCESSING: 전사/요약/To-Do 처리 시작
+    PROCESSING --> PROCESSING: 자동 재시도(최대 3회, 로그만 기록)
+    PROCESSING --> COMPLETED: transcript, 요약, 결정사항, To-Do 저장 성공
+    PROCESSING --> FAILED: 재시도 3회 초과 또는 최종 처리 실패
 ```
 
 ## 상태 전이 규칙
-- 전사 완료 전 요약 시작 불가
-- FAILED 상태에서는 실패 원인 코드 저장 필수
+- 상태값은 현재 위치만 표현한다
+- Retry는 별도 로그로 관리한다
+- FAILED 상태에서는 실패 원인과 재시도 이력 저장이 필요하다
 - COMPLETED 이후 수정은 재처리 작업으로만 허용

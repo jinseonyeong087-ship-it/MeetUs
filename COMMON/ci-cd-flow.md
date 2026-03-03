@@ -9,20 +9,22 @@
 1. PR 생성
 2. Lint/Test 실행
 3. Build
-4. Staging 배포
-5. 승인 후 Production 배포
+4. ECR Push
+5. CodeDeploy 배포 실행
+6. ECS Blue-Green 전환
 
 ## Mermaid Diagram
 ```mermaid
 flowchart LR
     A[feature/*] --> B[Pull Request]
     B --> C[CI: Lint/Test/Build]
-    C --> D[Staging Deploy]
-    D --> E[Approval]
-    E --> F[Production Deploy]
+    C --> D[ECR Push]
+    D --> E[CodeDeploy]
+    E --> F[ALB Listener Switch]
+    F --> G[ECS Blue-Green Complete]
 ```
 
-## 개발 전 확정 필요 항목
+## 운영 고려 항목
 - 실패 시 롤백 방식
 - 배포 승인 권한자
 - 시크릿 주입 방식

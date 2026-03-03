@@ -9,16 +9,53 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
 
 ## 2.1 회의 생성 (업로드 시작)
 - **POST** `/meetings`
-- 설명: 회의 메타데이터 생성 및 업로드 URL/토큰 발급
+- 설명: 워크스페이스 소유 회의 메타데이터 생성
 
 ### Request (예시)
 ```json
 {
+  "workspaceId": "ws_123",
   "title": "주간 스프린트 회의",
-  "participants": ["TA", "SA", "AA"],
-  "audioFileName": "meeting-2026-02-27.mp3"
+  "startedAt": "2026-02-27T03:00:00Z"
 }
 ```
+
+### Response (예시)
+```json
+{
+  "meetingId": "mtg_123",
+  "status": "CREATED"
+}
+```
+
+---
+
+## 2.2 업로드 URL 발급
+- **POST** `/meetings/{meetingId}/audio/presigned-url`
+- 설명: `m4a`, 30MB 이하 파일 업로드용 Presigned URL 발급
+
+### Request (예시)
+```json
+{
+  "fileName": "meeting-2026-02-27.m4a",
+  "contentType": "audio/mp4",
+  "fileSize": 26214400
+}
+```
+
+### Response (예시)
+```json
+{
+  "uploadUrl": "https://example-presigned-url",
+  "objectKey": "workspaces/ws_123/meetings/mtg_123/audio/source.m4a",
+  "expiresIn": 900
+}
+```
+
+---
+
+## 2.3 업로드 완료 처리
+- **POST** `/meetings/{meetingId}/audio:complete`
 
 ### Response (예시)
 ```json
@@ -30,7 +67,7 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
 
 ---
 
-## 2.2 회의 목록 조회 (Archive)
+## 2.4 회의 목록 조회 (Archive)
 - **GET** `/meetings?query=&status=&from=&to=&sort=createdAt,desc&page=0&size=20`
 
 ### Response (예시)
@@ -40,7 +77,7 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
     {
       "meetingId": "mtg_123",
       "title": "주간 스프린트 회의",
-      "status": "SUMMARIZING",
+      "status": "PROCESSING",
       "createdAt": "2026-02-27T03:00:00Z"
     }
   ],
@@ -52,7 +89,7 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
 
 ---
 
-## 2.3 회의 상세 조회
+## 2.5 회의 상세 조회
 - **GET** `/meetings/{meetingId}`
 
 ### Response (예시)
@@ -62,24 +99,25 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
   "title": "주간 스프린트 회의",
   "status": "COMPLETED",
   "transcript": "...",
-  "summary": "..."
+  "summary": "전체 요약 5~7줄",
+  "decisions": [
+    "3월 2주차 배포 일정 확정"
+  ]
 }
 ```
 
 ---
 
-## 2.4 개인별 To-Do 조회
+## 2.6 개인별 To-Do 조회
 - **GET** `/meetings/{meetingId}/todos`
 
 ### Response (예시)
 ```json
 [
   {
-    "todoId": "todo_1",
-    "assignee": "AA",
+    "assignee": "홍길동",
     "task": "아카이브 필터 UI 구현",
-    "dueDate": "2026-03-02",
-    "priority": "HIGH"
+    "due_date": "2026-03-02"
   }
 ]
 ```
@@ -87,8 +125,9 @@ Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 
 ---
 
 ## 3. 프론트 상태 처리 규칙
-- `COMPLETED` 전까지는 상세 페이지에서 로딩/진행 상태 표시
+- `CREATED`, `UPLOADED`, `PROCESSING` 상태에서는 로딩/진행 상태 표시
 - `FAILED` 수신 시 오류 메시지 + 재시도 UI 표시
+- 상태값은 `CREATED`, `UPLOADED`, `PROCESSING`, `COMPLETED`, `FAILED`만 사용
 
 ---
 

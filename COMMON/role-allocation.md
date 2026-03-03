@@ -35,9 +35,10 @@
 ### 🔹 AWS
 - Core ECR
 - IAM Role
-- Deployment.yaml
-- Service.yaml
-- Blue/Green
+- ECS Service
+- Task Definition
+- CodeDeploy 연동
+- Blue/Green Target Group 연동
 
 ---
 
@@ -77,9 +78,10 @@
 ### 🔹 AWS
 - AI ECR
 - IAM (Transcribe/S3 권한)
-- Deployment.yaml
-- HPA
-- Blue/Green
+- ECS Service
+- Task Definition
+- CodeDeploy 연동
+- Retry Log 운영 기준
 
 ---
 
@@ -118,10 +120,11 @@
 
 ### 🔹 AWS
 - Front ECR
-- Ingress
-- LoadBalancer
-- Deployment.yaml
-- Blue/Green
+- ALB 연동
+- ECS Service
+- Task Definition
+- CodeDeploy 연동
+- Blue/Green Target Group 연동
 
 ---
 

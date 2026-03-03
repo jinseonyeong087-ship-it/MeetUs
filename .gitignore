@@ -2,6 +2,27 @@
 # AI-Minutes .gitignore
 # =========================
 
+# [Personal Framework] AI 페어 프로그래밍 규칙 (팀 충돌 방지용)
+ai_context/
+
+# [Python] 가상환경 및 캐시
+ai-pipeline/venv/
+__pycache__/
+*.py[cod]
+
+# [Security] 비밀 키 및 환경 변수
+ai-pipeline/.env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.kubeconfig
+kubeconfig
+
 # OS / Editor
 .DS_Store
 Thumbs.db
@@ -23,18 +44,6 @@ node_modules/
 dist/
 build/
 .cache/
-
-# Environment / secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-*.crt
-*.p12
-*.jks
-*.kubeconfig
-kubeconfig
 
 # AWS / cloud credentials
 .aws/

@@ -26,9 +26,9 @@ AI 처리(STT 및 LLM)는 짧게는 수십 초에서 길게는 수 분이 걸리
 4. **할 일 추출 결과 (`meeting_todo`):** FK(`meeting_id`), 담당자명(`assignee` - Workspace Member 매핑), 할 일 내용(`task`), 마감일(`due_date` - 선택 널 허용).
 
 ## 3. 핵심 시스템 컴포넌트
-* **Frontend (AA):** React / Node.js (상태값 기반 폴링 렌더링)
-* **Core API (TA):** Spring Boot (REST API, DB 트랜잭션 관리, SQS Producer)
-* **AI Engine (SA):** Python 3.12 (Boto3, LLM 연동, SQS Consumer / Worker, 실패 3회 재처리 로직)
+* **Frontend (AA):** Vanilla JS / Nginx (상태값 기반 렌더링)
+* **Core API (TA):** Python (FastAPI) (인증, 회의/상태 관리, Presigned URL 발급, SQS Producer)
+* **AI Processing Service (SA):** Python 3.12 (Worker/FastAPI, Boto3, LLM 연동, SQS Consumer, 실패 3회 재처리 로직)
 * **Infrastructure:** AWS S3 (오디오), AWS SQS (큐), AWS Transcribe (음성), AWS EKS (단일 운영 배포 환경, 블루/그린 적용), AWS ECR (이미지)
 
 ---

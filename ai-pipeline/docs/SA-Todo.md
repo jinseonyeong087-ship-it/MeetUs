@@ -11,7 +11,7 @@
 - [ ] AWS SQS 폴링(Polling) 리스너 구현 (새 메시지가 올 때까지 대기하고 낚아채기)
 - [ ] SQS 메시지 파싱 및 검증 (수신된 JSON 데이터 구조 확인, 30MB/m4a 제약 체크)
 - [ ] Core API / DB 통신을 위한 HTTP Request 모듈 구현
-  - *Rule:* DB 컬럼명은 `snake_case`, FE/Java API 연동 데이터는 `camelCase` 엄수. PK는 `Long`(파이썬에서는 `int`) 타입 적용.
+  - *Rule:* 백엔드가 모두 파이썬이므로 모든 데이터 연동 필드 및 변수명은 `snake_case`로 통일. PK는 파이썬에서 `int` 타입 적용.
 - [ ] DB 상태 업데이트 로직 구현 1: 작업 시작 시 `[TRANSCRIBING]`으로 상태 변경
 
 ## 🎙️ Phase 3: AWS Transcribe (STT) 파이프라인

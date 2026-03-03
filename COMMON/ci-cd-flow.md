@@ -10,7 +10,8 @@
 2. Lint/Test 실행
 3. Build
 4. ECR Push
-5. ECS Rolling Update 배포
+5. CodeDeploy 배포 실행
+6. ECS Blue-Green 전환
 
 ## Mermaid Diagram
 ```mermaid
@@ -18,7 +19,9 @@ flowchart LR
     A[feature/*] --> B[Pull Request]
     B --> C[CI: Lint/Test/Build]
     C --> D[ECR Push]
-    D --> E[ECS Rolling Update]
+    D --> E[CodeDeploy]
+    E --> F[ALB Listener Switch]
+    F --> G[ECS Blue-Green Complete]
 ```
 
 ## 운영 고려 항목

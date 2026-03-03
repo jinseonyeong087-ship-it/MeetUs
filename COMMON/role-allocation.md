@@ -37,7 +37,8 @@
 - IAM Role
 - ECS Service
 - Task Definition
-- Rolling Update
+- CodeDeploy 연동
+- Blue/Green Target Group 연동
 
 ---
 
@@ -79,6 +80,7 @@
 - IAM (Transcribe/S3 권한)
 - ECS Service
 - Task Definition
+- CodeDeploy 연동
 - Retry Log 운영 기준
 
 ---
@@ -121,7 +123,8 @@
 - ALB 연동
 - ECS Service
 - Task Definition
-- Rolling Update
+- CodeDeploy 연동
+- Blue/Green Target Group 연동
 
 ---
 

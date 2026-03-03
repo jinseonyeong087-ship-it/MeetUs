@@ -15,18 +15,23 @@ subgraph VPC
 
 subgraph Public_Subnet
 ALB[Application Load Balancer]
+LISTENER[ALB Production Listener]
 NAT[NAT Gateway]
 end
 
 subgraph Private_Subnet
 
 subgraph ECS_Cluster
-FE[ECS Service - Frontend]
-CORE[ECS Service - Core API]
+FE_BLUE[ECS Frontend - Blue]
+FE_GREEN[ECS Frontend - Green]
+CORE_BLUE[ECS Core API - Blue]
+CORE_GREEN[ECS Core API - Green]
 AI[ECS Service - AI Processing]
 end
 
 RDS[(Amazon RDS t3.micro)]
+TG_BLUE[Blue Target Group]
+TG_GREEN[Green Target Group]
 end
 
 S3[(Amazon S3)]
@@ -41,6 +46,7 @@ end
 
 GHA[GitHub Actions]
 ECR[Amazon ECR]
+CD[CodeDeploy]
 
 %% =======================
 %% TRAFFIC FLOW
@@ -48,14 +54,23 @@ ECR[Amazon ECR]
 
 USER --> IGW
 IGW --> ALB
-ALB --> FE
-ALB --> CORE
+ALB --> LISTENER
+LISTENER --> TG_BLUE
+LISTENER -. switch .-> TG_GREEN
+TG_BLUE --> FE_BLUE
+TG_BLUE --> CORE_BLUE
+TG_GREEN --> FE_GREEN
+TG_GREEN --> CORE_GREEN
 
-FE --> CORE
+FE_BLUE --> CORE_BLUE
+FE_GREEN --> CORE_GREEN
 
-CORE --> RDS
-CORE --> S3
-CORE --> AI
+CORE_BLUE --> RDS
+CORE_BLUE --> S3
+CORE_BLUE --> AI
+CORE_GREEN --> RDS
+CORE_GREEN --> S3
+CORE_GREEN --> AI
 
 AI --> TRANS
 AI --> OPENAI
@@ -67,8 +82,9 @@ AI --> S3
 %% =======================
 
 GHA --> ECR
-ECR --> FE
-ECR --> CORE
+ECR --> CD
+CD --> FE_GREEN
+CD --> CORE_GREEN
 ECR --> AI
 
 %% =======================

@@ -1,7 +1,7 @@
 # 네트워크 구성도 (AA)
 
 ## 환경 구분
-- Public Subnet: ALB 진입점
+- Public Subnet: ALB 및 Production Listener 진입점
 - Private Subnet: ECS 서비스, DB
 - 외부 연동: STT/LLM API
 
@@ -9,11 +9,19 @@
 ```mermaid
 flowchart TB
     U[사용자 브라우저] --> ALB[ALB]
-    ALB --> FE[Frontend Service]
-    ALB --> API[Core API Service]
+    ALB --> LISTENER[Production Listener]
+    LISTENER --> TGB[Blue Target Group]
+    LISTENER -. switch .-> TGG[Green Target Group]
+    TGB --> FE[Frontend Service]
+    TGB --> API[Core API Service]
+    TGG --> FEG[Frontend Service]
+    TGG --> APIG[Core API Service]
     API --> AI[AI Processing Service]
     API --> DB[(RDS PostgreSQL)]
     API --> OS[(Amazon S3)]
+    APIG --> AI
+    APIG --> DB
+    APIG --> OS
     AI --> DB
     AI --> OS
     AI --> EXT[외부 STT/LLM API]

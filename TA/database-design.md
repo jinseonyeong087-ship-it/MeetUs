@@ -48,6 +48,7 @@ user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 | ---------- | ------------ | ---------------- | ----------- |
 | user_id    | UUID         | PK               | 사용자 식별자     |
 | email      | VARCHAR(255) | UNIQUE, NOT NULL | 사용자 이메일     |
+| password   | VARCHAR(255) | NOT NULL         | 사용자 비밀번호   |
 | name       | VARCHAR(100) | NOT NULL         | 사용자 이름      |
 | created_at | TIMESTAMP    | NOT NULL         | 계정 생성 시간    |
 

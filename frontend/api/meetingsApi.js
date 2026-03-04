@@ -1,6 +1,6 @@
 import { seedMeetings } from './mockData.js';
 
-const STORAGE_KEY = 'ai-minutes-mock-meetings';
+const STORAGE_KEY = 'meetus-mock-meetings';
 const NETWORK_DELAY_MS = 180;
 
 function simulateDelay(payload) {
@@ -112,7 +112,7 @@ export async function getMeetings(filters = {}) {
       meeting.title.toLowerCase().includes(query) ||
       meeting.participants.some((participant) => participant.toLowerCase().includes(query));
     const matchesStatus = status === 'ALL' || meeting.status === status;
-    const matchesWorkspace = !workspaceId || meeting.workspaceId === workspaceId;
+    const matchesWorkspace = !workspaceId || meeting.workspace_id === workspaceId;
 
     return matchesQuery && matchesStatus && matchesWorkspace;
   });

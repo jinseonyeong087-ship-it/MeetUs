@@ -1,6 +1,7 @@
 import { logoutMock, requireSession } from '../api/sessionApi.js';
 import { createWorkspace, getCurrentWorkspace, getWorkspaces, setCurrentWorkspace } from '../api/workspaceApi.js';
 import { initMobileSidebar } from '../utils/mobileSidebar.js';
+import { initWorkspaceModal, updateHeaderUserInfo, initGlobalSearch } from '../utils/common.js';
 
 const workspaceListEl = document.getElementById('workspace-list');
 const workspaceCountEl = document.getElementById('workspace-count');
@@ -8,15 +9,15 @@ const formEl = document.getElementById('workspace-form');
 const nameInputEl = document.getElementById('workspace-name-input');
 const descriptionInputEl = document.getElementById('workspace-description-input');
 const errorEl = document.getElementById('workspace-error');
-const userNameEl = document.getElementById('user-name');
-const userEmailEl = document.getElementById('user-email');
 const logoutBtn = document.getElementById('logout-btn');
 
 const session = requireSession();
-initMobileSidebar();
 
-userNameEl.textContent = session.user.name;
-userEmailEl.textContent = session.user.email;
+// 헤더에서 사용자 이름 업데이트
+const headerUserName = document.getElementById('header-user-name');
+if (headerUserName && session.user) {
+  headerUserName.textContent = session.user.name;
+}
 
 function createWorkspaceCard(workspace) {
   const current = getCurrentWorkspace();
@@ -75,5 +76,14 @@ formEl.addEventListener('submit', (event) => {
 });
 
 logoutBtn.addEventListener('click', logoutMock);
+
+// 새로운 기능듡 초기화
+initMobileSidebar();
+initWorkspaceModal();
+updateHeaderUserInfo();
+initGlobalSearch();
+
+// 워크스페이스 리스트 새로고침 함수를 전역으로 노출
+window.refreshWorkspaceList = renderWorkspaces;
 
 renderWorkspaces();

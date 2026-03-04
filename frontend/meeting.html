@@ -10,10 +10,21 @@
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
   <body>
-    <header class="mobile-topbar">
-      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
-      <strong>MeetUs</strong>
+    <header class="main-header">
+      <button id="mobile-menu-btn" class="mobile-menu-btn">☰</button>
+      <a href="./" class="header-logo">MeetUs</a>
+      <div class="header-search">
+        <svg class="header-search-icon" viewBox="0 0 24 24">
+          <path d="M11 19a8 8 0 100-16 8 8 0 000 16zm5-5l4.35 4.35"/>
+        </svg>
+        <input type="text" placeholder="회의 검색..." class="header-search-input" id="global-search">
+      </div>
+      <div class="header-user">
+        <span id="header-user-name">사용자</span>
+        <button id="logout-btn" class="header-logout-btn">로그아웃</button>
+      </div>
     </header>
+
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
     <main class="workspace detail">
@@ -25,6 +36,12 @@
           <a class="menu-item" href="./index.html">Workspace</a>
           <a class="menu-item active" href="#">Meeting Detail</a>
         </nav>
+        
+
+        <button class="menu-item workspace-create-btn" type="button" id="create-workspace-btn">
+          + 워크스페이스 생성
+        </button>
+        
         <a class="btn" href="./index.html">Archive로 돌아가기</a>
         <div class="sidebar-note">
           <p class="eyebrow">Current Workspace</p>
@@ -91,7 +108,59 @@
           </dl>
         </div>
       </section>
+
+      <section class="panel right-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Navigation</p>
+            <h2>빠른 이동</h2>
+          </div>
+        </div>
+        
+        <div class="nav-card">
+          <h3>다른 회의 보기</h3>
+          <p class="muted">같은 워크스페이스의 다른 회의들을 확인하세요</p>
+          <a href="index.html" class="btn">Archive 페이지로</a>
+        </div>
+        
+        <div class="nav-card">
+          <h3>워크스페이스 관리</h3>
+          <p class="muted">팀원 초대, 설정 변경, 권한 관리</p>
+          <a href="workspaces.html" class="btn">워크스페이스 관리</a>
+        </div>
+        
+        <div class="nav-card">
+          <h3>새 회의 업로드</h3>
+          <p class="muted">음성 파일을 업로드해서 새 회의를 생성하세요</p>
+          <button id="upload-from-detail" class="btn">파일 선택</button>
+        </div>
+      </section>
     </main>
+
+    <!-- Workspace Create Modal -->
+    <div id="workspace-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>새 워크스페이스 만들기</h2>
+          <button type="button" class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <form id="workspace-form" class="modal-form">
+          <label class="field">
+            <span>워크스페이스 이름 *</span>
+            <input id="workspace-name-input" type="text" placeholder="예: Product Team" required />
+          </label>
+          <label class="field">
+            <span>설명</span>
+            <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개 (선택사항)" />
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="cancel-modal">취소</button>
+            <button type="submit" class="btn btn-primary">워크스페이스 생성</button>
+          </div>
+        </form>
+        <p id="workspace-error" class="muted"></p>
+      </div>
+    </div>
 
     <script type="module" src="./pages/meetingDetail.js"></script>
   </body>

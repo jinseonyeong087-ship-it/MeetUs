@@ -4,6 +4,7 @@ import { getCurrentWorkspace, requireWorkspace } from '../api/workspaceApi.js';
 import { createTodoCard } from '../components/todoCard.js';
 import { formatDateTime } from '../utils/format.js';
 import { initMobileSidebar } from '../utils/mobileSidebar.js';
+import { initWorkspaceModal, updateHeaderUserInfo, initGlobalSearch } from '../utils/common.js';
 
 const titleEl = document.getElementById('meeting-title');
 const metaEl = document.getElementById('meeting-meta');
@@ -19,8 +20,6 @@ const statusDescriptionEl = document.getElementById('status-description');
 const statusBannerEl = document.getElementById('status-banner');
 const refreshBtn = document.getElementById('refresh-btn');
 const retryBtn = document.getElementById('retry-btn');
-const sidebarWorkspaceNameEl = document.getElementById('sidebar-workspace-name');
-const sidebarUserNameEl = document.getElementById('sidebar-user-name');
 const logoutBtn = document.getElementById('logout-btn');
 
 let pollingTimer = null;
@@ -29,9 +28,11 @@ let meetingId = '';
 const session = requireSession();
 const currentWorkspace = requireWorkspace();
 
-initMobileSidebar();
-sidebarWorkspaceNameEl.textContent = currentWorkspace.name;
-sidebarUserNameEl.textContent = `${session.user.name} · ${session.user.email}`;
+// 헤더에서 사용자 이름 업데이트
+const headerUserNameEl = document.querySelector('.header-user span');
+if (headerUserNameEl && session.user) {
+  headerUserNameEl.textContent = session.user.name;
+}
 logoutBtn.addEventListener('click', logoutMock);
 
 function renderDecisions(decisions) {
@@ -137,5 +138,11 @@ async function init() {
 
   await renderMeeting();
 }
+
+// 새로운 기능들 초기화
+initMobileSidebar();
+initWorkspaceModal();
+updateHeaderUserInfo();
+initGlobalSearch();
 
 init();

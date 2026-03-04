@@ -10,10 +10,21 @@
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
   <body>
-    <header class="mobile-topbar">
-      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
-      <strong>MeetUs</strong>
+    <header class="main-header">
+      <button id="mobile-menu-btn" class="mobile-menu-btn">☰</button>
+      <a href="./" class="header-logo">MeetUs</a>
+      <div class="header-search">
+        <svg class="header-search-icon" viewBox="0 0 24 24">
+          <path d="M11 19a8 8 0 100-16 8 8 0 000 16zm5-5l4.35 4.35"/>
+        </svg>
+        <input type="text" placeholder="회의 검색..." class="header-search-input" id="global-search">
+      </div>
+      <div class="header-user">
+        <span id="header-user-name">사용자</span>
+        <button id="logout-btn" class="header-logout-btn">로그아웃</button>
+      </div>
     </header>
+
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
     <main class="workspace">
@@ -25,19 +36,10 @@
           <a class="menu-item active" href="./index.html">Archive</a>
           <a class="menu-item" href="./meeting.html?id=mtg-001">Meeting Detail</a>
         </nav>
-        <div class="sidebar-note">
-          <p class="eyebrow">Mock Mode</p>
-          <p class="muted">현재 화면은 API/DB 미연동 상태를 가정한 프론트엔드 목업입니다.</p>
-        </div>
-        <div class="sidebar-note">
-          <p class="eyebrow">Current Workspace</p>
-          <strong id="sidebar-workspace-name">워크스페이스 선택 필요</strong>
-          <p id="sidebar-user-name" class="muted">로그인 사용자</p>
-          <div class="inline-actions">
-            <a class="btn" href="./workspaces.html">워크스페이스 변경</a>
-            <button id="logout-btn" class="btn" type="button">로그아웃</button>
-          </div>
-        </div>
+        
+        <button class="menu-item workspace-create-btn" type="button" id="create-workspace-btn">
+          + 워크스페이스 생성
+        </button>
       </aside>
 
       <section class="panel left-panel">
@@ -101,32 +103,68 @@
         <p id="empty-state" class="empty-state hidden">조건에 맞는 회의가 없습니다.</p>
       </section>
 
-      <aside class="panel info-panel">
+      <section class="panel info-panel">
         <div class="panel-head">
           <div>
-            <p class="eyebrow">UX Guide</p>
-            <h2>사용자 안내</h2>
+            <p class="eyebrow">Personal Upload</p>
+            <h2>개인 음성 업로드</h2>
           </div>
         </div>
-        <div class="info-stack">
-          <article class="info-card">
-            <h3>현재 동작</h3>
-            <ul class="plain-list muted">
-              <li>업로드 후 상태가 `CREATED → UPLOADED → PROCESSING → COMPLETED` 순서로 변경됩니다.</li>
-              <li>상세 화면에서는 처리 중 상태를 polling으로 재조회합니다.</li>
-              <li>실패 상태 회의는 재처리 버튼을 통해 다시 진행할 수 있습니다.</li>
-            </ul>
-          </article>
-          <article class="info-card">
-            <h3>목업 기준</h3>
-            <ul class="plain-list muted">
-              <li>현재는 `localStorage` 기반 mock 데이터로 동작합니다.</li>
-              <li>API, DB 연동 후에도 동일한 UI 흐름을 유지하도록 설계했습니다.</li>
-            </ul>
-          </article>
+        
+        <!-- Personal Upload Zone -->
+        <div class="personal-upload-zone" id="personal-upload-zone">
+          <svg class="upload-icon" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+          </svg>
+          <h3>음성 파일 업로드</h3>
+          <p>개인 보관함에 바로 업로드</p>
+          <input type="file" id="personal-audio-input" accept=".m4a" style="display: none;">
         </div>
-      </aside>
+
+        <div class="sidebar-note">
+          <p class="eyebrow">Workspace Stats</p>
+          <dl class="meta-list">
+            <div>
+              <dt>총 회의</dt>
+              <dd id="total-meetings">-</dd>
+            </div>
+            <div>
+              <dt>처리 완료</dt>
+              <dd id="completed-meetings">-</dd>
+            </div>
+            <div>
+              <dt>처리 중</dt>
+              <dd id="processing-meetings">-</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
     </main>
+
+    <!-- Workspace Create Modal -->
+    <div id="workspace-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>새 워크스페이스 만들기</h2>
+          <button type="button" class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <form id="workspace-form" class="modal-form">
+          <label class="field">
+            <span>워크스페이스 이름 *</span>
+            <input id="workspace-name-input" type="text" placeholder="예: Product Team" required />
+          </label>
+          <label class="field">
+            <span>설명</span>
+            <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개 (선택사항)" />
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="cancel-modal">취소</button>
+            <button type="submit" class="btn btn-primary">워크스페이스 생성</button>
+          </div>
+        </form>
+        <p id="workspace-error" class="muted"></p>
+      </div>
+    </div>
 
     <script type="module" src="./pages/dashboard.js"></script>
   </body>

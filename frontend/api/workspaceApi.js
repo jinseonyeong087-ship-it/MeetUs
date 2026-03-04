@@ -8,6 +8,33 @@ function ensureWorkspaces() {
   if (!raw) {
     window.localStorage.setItem(WORKSPACES_KEY, JSON.stringify(seedWorkspaces));
   }
+  
+  // 개인 보관함 자동 생성
+  ensurePersonalWorkspace();
+}
+
+function ensurePersonalWorkspace() {
+  const session = JSON.parse(localStorage.getItem('meetus-mock-session') || '{}');
+  if (!session.user) return;
+
+  const personalId = `personal-${session.user.id}`;
+  const workspaces = JSON.parse(localStorage.getItem(WORKSPACES_KEY) || '[]');
+  
+  // 개인 보관함이 없다면 생성
+  const hasPersonal = workspaces.some(ws => ws.id === personalId);
+  if (!hasPersonal) {
+    const personalWorkspace = {
+      id: personalId,
+      name: `${session.user.name}의 개인 보관함`,
+      role: 'Owner',
+      members: 1,
+      description: '개인 음성 메모, 회의, 인터뷰를 위한 개인 전용 공간',
+      type: 'PERSONAL'
+    };
+    
+    workspaces.unshift(personalWorkspace);
+    localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces));
+  }
 }
 
 export function getWorkspaces() {
@@ -47,6 +74,15 @@ export function setCurrentWorkspace(id) {
 export function getCurrentWorkspace() {
   const raw = window.localStorage.getItem(CURRENT_WORKSPACE_KEY);
   return raw ? JSON.parse(raw) : null;
+}
+
+export function getPersonalWorkspace() {
+  const session = JSON.parse(localStorage.getItem('meetus-mock-session') || '{}');
+  if (!session.user) return null;
+  
+  const personalId = `personal-${session.user.id}`;
+  const workspaces = getWorkspaces();
+  return workspaces.find(ws => ws.id === personalId) || null;
 }
 
 export function requireWorkspace() {

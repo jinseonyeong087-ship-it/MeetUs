@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MeetUs - Meetings</title>
+    <title>MeetUs - 회의 목록</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,25 +14,27 @@
       <aside class="sidebar">
         <div class="brand-block">
           <h1>MeetUs</h1>
-          <p>AI Meeting Summary &amp; To-Do Archive Platform</p>
         </div>
 
         <nav class="nav-group">
-          <a class="nav-item" href="./dashboard.html">Dashboard</a>
-          <a class="nav-item" href="./upload.html">Upload Meeting</a>
-          <a class="nav-item active" href="./index.html">Meetings</a>
-          <a class="nav-item" href="./archive.html">Archive</a>
+          <a class="nav-item" href="./dashboard.html">대시보드</a>
+          <a class="nav-item" href="./upload.html">회의 업로드</a>
+          <a class="nav-item active" href="./index.html">회의 목록</a>
+          <a class="nav-item" href="./archive.html">아카이브</a>
         </nav>
 
         <div class="sidebar-card">
-          <h3>Core Scope</h3>
+          <h3>핵심 기능</h3>
           <ul>
-            <li>Upload meeting audio</li>
-            <li>Display transcription</li>
-            <li>Show AI summary</li>
-            <li>Extract Action Items</li>
-            <li>Archive and search meetings</li>
+            <li>회의 음성 업로드</li>
+            <li>전사 결과 확인</li>
+            <li>AI 요약 확인</li>
+            <li>액션 아이템 추출</li>
+            <li>아카이브 검색</li>
           </ul>
+        </div>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="sidebar-logout-btn" type="button">로그아웃</button>
         </div>
       </aside>
 
@@ -40,11 +42,15 @@
         <header class="topbar">
           <div class="page-title">
             <p class="eyebrow">Meetings</p>
-            <h2>Meeting List</h2>
+            <h2>회의 목록</h2>
             <p>최근 업로드된 회의와 처리 상태를 확인하고 상세 결과로 이동합니다.</p>
           </div>
           <div class="topbar-actions">
-            <a class="btn" href="./upload.html">새 회의 업로드</a>
+            <span id="current-workspace" class="muted"></span>
+            <span id="current-user" class="muted"></span>
+            <a class="btn" href="./workspaces.html">워크스페이스</a>
+            <a class="btn" href="./workspaces.html?modal=create">워크스페이스 생성</a>
+            <a class="btn" href="./upload.html">업로드 페이지</a>
             <button id="reload-btn" class="btn btn-primary" type="button">새로고침</button>
           </div>
         </header>
@@ -52,15 +58,15 @@
         <section class="card">
           <div class="filters">
             <div class="field">
-              <label for="search-input">Search meeting</label>
+              <label for="search-input">회의 검색</label>
               <input id="search-input" type="search" placeholder="회의 제목 또는 참여자 검색" />
             </div>
             <div class="field">
-              <label for="date-filter">Filter by date</label>
+              <label for="date-filter">날짜 필터</label>
               <input id="date-filter" type="date" />
             </div>
             <div class="field">
-              <label for="status-filter">Processing status</label>
+              <label for="status-filter">처리 상태</label>
               <select id="status-filter">
                 <option value="ALL">ALL</option>
                 <option value="UPLOADED">UPLOADED</option>
@@ -71,17 +77,18 @@
               </select>
             </div>
             <div class="field">
-              <label for="sort-filter">Sort</label>
+              <label for="sort-filter">정렬</label>
               <select id="sort-filter">
-                <option value="date-desc">Latest first</option>
-                <option value="date-asc">Oldest first</option>
-                <option value="status">Status</option>
+                <option value="date-desc">최신순</option>
+                <option value="date-asc">오래된순</option>
+                <option value="status">상태순</option>
               </select>
             </div>
           </div>
         </section>
 
         <section id="meeting-list" class="meeting-list"></section>
+        <div id="meeting-pagination" class="pagination hidden"></div>
         <p id="empty-state" class="empty-state hidden">조건에 맞는 회의가 없습니다.</p>
       </section>
     </main>

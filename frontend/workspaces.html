@@ -3,143 +3,100 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MeetUs - Workspaces</title>
+    <title>MeetUs - 워크스페이스</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
   <body>
-    <header class="main-header">
-      <button id="mobile-menu-btn" class="mobile-menu-btn">☰</button>
-      <a href="./" class="header-logo">MeetUs</a>
-      <div class="header-search">
-        <svg class="header-search-icon" viewBox="0 0 24 24">
-          <path d="M11 19a8 8 0 100-16 8 8 0 000 16zm5-5l4.35 4.35"/>
-        </svg>
-        <input type="text" placeholder="워크스페이스 검색..." class="header-search-input" id="workspace-search">
-      </div>
-      <div class="header-user">
-        <span id="header-user-name">사용자</span>
-        <button id="logout-btn" class="header-logout-btn">로그아웃</button>
-      </div>
-    </header>
-
-    <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
-
-    <main class="workspace workspaces-layout">
+    <main class="app-shell">
       <aside class="sidebar">
-        <h1>MeetUs</h1>
-        <p class="muted">Workspace Management</p>
-        <nav class="menu">
-          <a class="menu-item active" href="./workspaces.html">Workspaces</a>
-          <a class="menu-item" href="./index.html">Archive</a>
+        <div class="brand-block">
+          <h1>MeetUs</h1>
+          <p>워크스페이스 진입 화면</p>
+        </div>
+
+        <nav class="nav-group">
+          <a class="nav-item active" href="./workspaces.html">워크스페이스</a>
+          <a class="nav-item" href="./dashboard.html">대시보드</a>
+          <a class="nav-item" href="./index.html">회의 목록</a>
         </nav>
-        
-        <button class="menu-item workspace-create-btn" type="button" id="create-workspace-btn">
-          + 워크스페이스 생성
-        </button>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="sidebar-logout-btn" type="button">로그아웃</button>
+        </div>
       </aside>
 
-      <section class="panel main-panel">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Workspace List</p>
+      <section class="content-shell">
+        <header class="topbar">
+          <div class="page-title">
+            <p class="eyebrow">Workspace Selection</p>
             <h2>워크스페이스 선택</h2>
+            <p>워크스페이스를 선택하면 Meetings, Upload, Archive 화면에서 동일한 UI 톤으로 작업을 이어갑니다.</p>
           </div>
-          <div class="inline-actions">
-            <span id="workspace-count" class="muted">0개</span>
-            <button class="btn" type="button" onclick="location.reload()">새로고침</button>
+          <div class="topbar-actions">
+            <span id="current-user" class="muted"></span>
+            <span id="workspace-count" class="muted">0 workspaces</span>
+            <button id="open-workspace-modal-btn" class="btn" type="button">워크스페이스 생성</button>
           </div>
-        </div>
-        <div id="workspace-list" class="workspace-list"></div>
-      </section>
+        </header>
 
-      <section class="panel left-panel">
-        <div class="panel-head">
+        <section class="workspace-grid">
           <div>
-            <p class="eyebrow">Personal Upload</p>
-            <h2>개인 음성 업로드</h2>
+            <section id="workspace-list" class="workspace-list"></section>
+            <div id="workspace-pagination" class="pagination hidden"></div>
           </div>
-        </div>
-        
-        <!-- Personal Upload Zone -->
-        <div class="personal-upload-zone" id="personal-upload-zone">
-          <svg class="upload-icon" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-          </svg>
-          <h3>음성 파일 업로드</h3>
-          <p>드래그 앤 드롭하거나 클릭해서 m4a 파일을 선택하세요</p>
-          <input type="file" id="personal-audio-input" accept=".m4a" style="display: none;">
-        </div>
 
-        <div class="info-card">
-          <h3>개인 보관함</h3>
-          <p class="muted">
-            팀 워크스페이스 외에도 개인 보관함을 제공합니다. 개인 회의, 음성 메모, 인터뷰 등을 동일한 AI 요약 기능으로 관리할 수 있습니다.
-          </p>
-        </div>
-        
-        <div class="info-card">
-          <h3>지원 형식</h3>
-          <ul class="plain-list muted">
-            <li>파일 형식: m4a (최대 30MB)</li>
-            <li>길이: 최대 2시간 권장</li>
-            <li>언어: 한국어, 영어 지원</li>
-          </ul>
-        </div>
-      </section>
+          <aside class="workspace-side-stack">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                <p class="eyebrow">Personal Archive</p>
+                <h3>개인 보관함 안내</h3>
+                </div>
+              </div>
+              <p class="muted">개인 워크스페이스를 선택하면 개인 음성 메모, 인터뷰, 회의 기록도 같은 업로드 흐름으로 관리할 수 있습니다.</p>
+            </article>
 
-      <section class="panel right-panel">
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Team Management</p>
-            <h2>팀 관리</h2>
-          </div>
-        </div>
-        
-        <div class="info-card">
-          <h3>멤버 초대</h3>
-          <p class="muted">새로운 팀원을 워크스페이스에 초대하고 권한을 설정할 수 있습니다.</p>
-          <button class="btn">멤버 초대</button>
-        </div>
-        
-        <div class="info-card">
-          <h3>워크스페이스 설정</h3>
-          <p class="muted">워크스페이스 이름, 설명, 기본 설정을 변경할 수 있습니다.</p>
-          <button class="btn">설정 관리</button>
-        </div>
-        
-        <div class="info-card">
-          <h3>사용 통계</h3>
-          <p class="muted">팀의 회의 업로드 현황과 AI 처리 통계를 확인하세요.</p>
-          <button class="btn">통계 보기</button>
-        </div>
+            <article class="card">
+              <div class="card-head">
+                <div>
+                <p class="eyebrow">Core Actions</p>
+                <h3>사용 가능 기능</h3>
+                </div>
+              </div>
+              <ul class="muted" style="margin: 0; padding-left: 18px; line-height: 1.8;">
+                <li>회의 업로드</li>
+                <li>AI Summary 확인</li>
+                <li>Action Items 조회</li>
+                <li>Archive 검색 및 재조회</li>
+              </ul>
+            </article>
+          </aside>
+        </section>
       </section>
     </main>
 
-    <!-- Workspace Create Modal -->
     <div id="workspace-modal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>새 워크스페이스 만들기</h2>
-          <button type="button" class="modal-close" id="close-modal">&times;</button>
-        </div>
-        <form id="workspace-form" class="modal-form">
-          <label class="field">
-            <span>워크스페이스 이름 *</span>
-            <input id="workspace-name-input" type="text" placeholder="예: Product Team" required />
-          </label>
-          <label class="field">
-            <span>설명</span>
-            <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개 (선택사항)" />
-          </label>
+      <div class="modal-panel">
+        <p class="eyebrow">Create Workspace</p>
+        <h2 style="margin: 0;">새 워크스페이스 생성</h2>
+        <p class="muted" style="margin: 8px 0 0;">워크스페이스를 만들고 유저 ID 기준으로 멤버를 초대할 수 있습니다.</p>
+        <form id="workspace-form" class="auth-form">
+          <div class="field">
+            <label for="workspace-name-input">워크스페이스 이름</label>
+            <input id="workspace-name-input" type="text" placeholder="예: Product Team" />
+          </div>
+          <div class="field">
+            <label for="workspace-description-input">설명</label>
+            <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개" />
+          </div>
+          <p id="workspace-error" class="muted" style="margin: 0;"></p>
           <div class="modal-actions">
-            <button type="button" class="btn" id="cancel-modal">취소</button>
-            <button type="submit" class="btn btn-primary">워크스페이스 생성</button>
+            <button id="close-workspace-modal-btn" class="btn" type="button">취소</button>
+            <button class="btn btn-primary" type="submit">생성</button>
           </div>
         </form>
-        <p id="workspace-error" class="muted"></p>
       </div>
     </div>
 

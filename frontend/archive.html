@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MeetUs - Archive</title>
+    <title>MeetUs - 아카이브</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -14,17 +14,19 @@
       <aside class="sidebar">
         <div class="brand-block">
           <h1>MeetUs</h1>
-          <p>AI Meeting Summary &amp; To-Do Archive Platform</p>
         </div>
         <nav class="nav-group">
-          <a class="nav-item" href="./dashboard.html">Dashboard</a>
-          <a class="nav-item" href="./upload.html">Upload Meeting</a>
-          <a class="nav-item" href="./index.html">Meetings</a>
-          <a class="nav-item active" href="./archive.html">Archive</a>
+          <a class="nav-item" href="./dashboard.html">대시보드</a>
+          <a class="nav-item" href="./upload.html">회의 업로드</a>
+          <a class="nav-item" href="./index.html">회의 목록</a>
+          <a class="nav-item active" href="./archive.html">아카이브</a>
         </nav>
         <div class="sidebar-card">
-          <h3>Archive View</h3>
+          <h3>아카이브 안내</h3>
           <p>완료되었거나 실패한 회의를 중심으로 검색, 날짜 필터, 최신순 정렬을 제공합니다.</p>
+        </div>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="sidebar-logout-btn" type="button">로그아웃</button>
         </div>
       </aside>
 
@@ -32,32 +34,39 @@
         <header class="topbar">
           <div class="page-title">
             <p class="eyebrow">Archive</p>
-            <h2>Meeting Archive</h2>
+            <h2>회의 아카이브</h2>
             <p>처리 완료된 회의를 보관하고 빠르게 다시 찾을 수 있습니다.</p>
+          </div>
+          <div class="topbar-actions">
+            <span id="current-workspace" class="muted"></span>
+            <span id="current-user" class="muted"></span>
+            <a class="btn" href="./workspaces.html">워크스페이스</a>
+            <a class="btn" href="./workspaces.html?modal=create">워크스페이스 생성</a>
           </div>
         </header>
 
         <section class="card">
           <div class="filters">
             <div class="field">
-              <label for="search-input">Search meeting</label>
+              <label for="search-input">회의 검색</label>
               <input id="search-input" type="search" placeholder="회의 제목 또는 참여자 검색" />
             </div>
             <div class="field">
-              <label for="date-filter">Filter by date</label>
+              <label for="date-filter">날짜 필터</label>
               <input id="date-filter" type="date" />
             </div>
             <div class="field">
-              <label for="sort-filter">Sort by latest</label>
+              <label for="sort-filter">정렬</label>
               <select id="sort-filter">
-                <option value="date-desc">Latest first</option>
-                <option value="date-asc">Oldest first</option>
+                <option value="date-desc">최신순</option>
+                <option value="date-asc">오래된순</option>
               </select>
             </div>
           </div>
         </section>
 
         <section id="archive-list" class="meeting-list"></section>
+        <div id="archive-pagination" class="pagination hidden"></div>
         <p id="empty-state" class="empty-state hidden">Archive에 표시할 회의가 없습니다.</p>
       </section>
     </main>

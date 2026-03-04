@@ -2,11 +2,12 @@ import { createMockMeeting, startMockUpload } from '../api/meetingsApi.js';
 
 export function mountUploadZone(rootElement, options = {}) {
   const onComplete = options.onComplete || (() => {});
+  const workspace = options.workspace || null;
   const container = document.createElement('section');
   container.className = 'upload-zone';
   container.innerHTML = `
     <div class="upload-header">
-      <p class="eyebrow">Upload Meeting</p>
+      <p class="eyebrow">회의 업로드</p>
       <h3>m4a 파일 업로드</h3>
       <p class="muted">Presigned URL 기반 업로드 흐름을 목업으로 재현합니다. 업로드 후 회의 상세 화면에서 처리 상태를 확인할 수 있습니다.</p>
     </div>
@@ -105,11 +106,12 @@ export function mountUploadZone(rootElement, options = {}) {
         title: titleInput.value,
         date: new Date(dateInput.value).toISOString(),
         participants: participantsInput.value,
-        fileName: selectedFile.name
+        fileName: selectedFile.name,
+        workspaceId: workspace?.workspaceId
       });
 
       updateProgress(35, 'Presigned URL 발급', '업로드 경로를 준비하고 있습니다.');
-      await startMockUpload(meeting.id, { fileName: selectedFile.name });
+      await startMockUpload(meeting.meetingId, { fileName: selectedFile.name });
 
       let progress = 35;
       const timer = window.setInterval(() => {

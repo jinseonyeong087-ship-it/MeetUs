@@ -15,19 +15,19 @@ export function createMeetingCard(meeting) {
   article.innerHTML = `
     <div class="meeting-card-head">
       <div>
-        <p class="eyebrow">Meeting</p>
+        <p class="eyebrow">회의</p>
         <h3>${escapeHtml(meeting.title)}</h3>
       </div>
       <span class="badge stage-${displayStatus}">${statusMeta.label}</span>
     </div>
     <div class="meeting-card-meta">
-      <span>${formatDateTime(meeting.date)}</span>
+      <span>${formatDateTime(meeting.startedAt)}</span>
       <span>참여자: ${meeting.participants.map(escapeHtml).join(', ')}</span>
     </div>
     <p class="meeting-card-summary">${escapeHtml(preview)}</p>
     <div class="meeting-card-foot">
       <span class="muted">${escapeHtml(meeting.sourceFileName || '파일 미등록')}</span>
-      <a class="link" href="./meeting.html?id=${encodeURIComponent(meeting.id)}">상세 보기</a>
+      <a class="link" href="./meeting.html?id=${encodeURIComponent(meeting.meetingId)}">상세 보기</a>
     </div>
   `;
 

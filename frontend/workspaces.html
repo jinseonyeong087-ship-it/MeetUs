@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetUs - Workspaces</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <header class="mobile-topbar">
+      <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
+      <strong>MeetUs</strong>
+    </header>
+    <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
+
+    <main class="workspace workspaces-layout">
+      <aside class="sidebar">
+        <h1>MeetUs</h1>
+        <p class="muted">Workspace Entry</p>
+        <nav class="menu">
+          <a class="menu-item active" href="./workspaces.html">Workspaces</a>
+          <a class="menu-item" href="./index.html">Archive</a>
+        </nav>
+        <div class="sidebar-note">
+          <p class="eyebrow">Signed In</p>
+          <strong id="user-name">사용자</strong>
+          <p id="user-email" class="muted">email</p>
+          <button id="logout-btn" class="btn" type="button">로그아웃</button>
+        </div>
+        <div class="sidebar-note">
+          <p class="eyebrow">Create Workspace</p>
+          <form id="workspace-form" class="sidebar-form">
+            <label class="field">
+              <span>워크스페이스 이름</span>
+              <input id="workspace-name-input" type="text" placeholder="예: Product Team" />
+            </label>
+            <label class="field">
+              <span>설명</span>
+              <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개" />
+            </label>
+            <button class="btn btn-primary" type="submit">워크스페이스 생성</button>
+          </form>
+          <p id="workspace-error" class="muted"></p>
+        </div>
+      </aside>
+
+      <section class="panel main-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Workspace List</p>
+            <h2>워크스페이스 선택</h2>
+          </div>
+          <span id="workspace-count" class="muted">0개</span>
+        </div>
+        <div id="workspace-list" class="workspace-list"></div>
+      </section>
+
+      <section class="panel left-panel">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Personal Upload</p>
+            <h2>개인 음성 업로드 안내</h2>
+          </div>
+        </div>
+        <div class="info-card">
+          <h3>개인 보관함 제공</h3>
+          <p class="muted">
+            팀 워크스페이스 외에도 `개인 보관함`을 기본 제공하여 개인 회의, 음성 메모, 인터뷰 정리본을 동일한 업로드 흐름으로 관리할 수 있습니다.
+          </p>
+        </div>
+        <div class="info-card">
+          <h3>사용 방식</h3>
+          <ul class="plain-list muted">
+            <li>`민수의 개인 보관함`을 선택하면 1인용 워크스페이스처럼 동작합니다.</li>
+            <li>업로드, 요약, To-Do 추출, Archive 조회는 동일한 UI를 사용합니다.</li>
+            <li>팀 협업이 필요한 경우 별도 워크스페이스를 생성해 전환할 수 있습니다.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./pages/workspaces.js"></script>
+  </body>
+</html>

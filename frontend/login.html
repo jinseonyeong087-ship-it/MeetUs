@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetUs - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <main class="auth-layout">
+      <section class="auth-hero">
+        <p class="eyebrow">MeetUs</p>
+        <h1>회의 기록을 팀 단위로 정리하는 회의 아카이브</h1>
+        <p class="muted">
+          로그인 후 워크스페이스에 진입하고, 업로드부터 요약과 개인별 To-Do 확인까지 하나의 흐름으로 관리합니다.
+        </p>
+        <div class="info-stack">
+          <article class="info-card">
+            <h3>핵심 기능</h3>
+            <ul class="plain-list muted">
+              <li>워크스페이스 단위 회의 업로드</li>
+              <li>AWS Transcribe + OpenAI 기반 요약</li>
+              <li>Archive 검색, 필터, 상태 추적</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+      <section class="auth-card">
+        <p class="eyebrow">Login</p>
+        <h2>MeetUs 시작하기</h2>
+        <form id="login-form" class="auth-form">
+          <label class="field">
+            <span>이메일</span>
+            <input id="email-input" type="email" placeholder="name@meetus.app" />
+          </label>
+          <label class="field">
+            <span>비밀번호</span>
+            <input id="password-input" type="password" placeholder="비밀번호 입력" />
+          </label>
+          <button class="btn btn-primary" type="submit">로그인</button>
+        </form>
+        <p id="login-error" class="muted"></p>
+        <div class="info-card">
+          <h3>Mock 계정 안내</h3>
+          <p class="muted">임의 이메일과 비밀번호를 입력하면 목업 세션이 생성됩니다.</p>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./pages/login.js"></script>
+  </body>
+</html>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Minutes - Meeting Detail</title>
+    <title>MeetUs - Meeting Detail</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,31 +12,84 @@
   <body>
     <header class="mobile-topbar">
       <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
-      <strong>AI Minutes</strong>
+      <strong>MeetUs</strong>
     </header>
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
     <main class="workspace detail">
       <aside class="sidebar">
-        <h1>AI Minutes</h1>
+        <h1>MeetUs</h1>
         <p class="muted">Meeting Detail</p>
-        <a class="btn" href="./index.html">대시보드</a>
+        <nav class="menu">
+          <a class="menu-item" href="./workspaces.html">Workspaces</a>
+          <a class="menu-item" href="./index.html">Workspace</a>
+          <a class="menu-item active" href="#">Meeting Detail</a>
+        </nav>
+        <a class="btn" href="./index.html">Archive로 돌아가기</a>
+        <div class="sidebar-note">
+          <p class="eyebrow">Current Workspace</p>
+          <strong id="sidebar-workspace-name">워크스페이스</strong>
+          <p id="sidebar-user-name" class="muted">로그인 사용자</p>
+          <button id="logout-btn" class="btn" type="button">로그아웃</button>
+        </div>
       </aside>
 
       <section class="panel main-panel">
         <div class="panel-head">
-          <h2 id="meeting-title">회의 상세</h2>
-          <span id="meeting-meta" class="muted"></span>
+          <div>
+            <p class="eyebrow">Meeting Detail Page</p>
+            <h2 id="meeting-title">회의 상세</h2>
+            <span id="meeting-meta" class="muted"></span>
+          </div>
+          <div class="inline-actions">
+            <button id="refresh-btn" class="btn" type="button">새로고침</button>
+            <button id="retry-btn" class="btn hidden" type="button">재처리</button>
+          </div>
         </div>
+        <article id="status-banner" class="status-banner">
+          <strong id="status-label">상태 확인 중</strong>
+          <p id="status-description" class="muted">회의 상태를 불러오는 중입니다.</p>
+        </article>
         <article class="summary-card">
           <h3>요약</h3>
           <div id="summary-content" class="summary"></div>
         </article>
+        <article class="summary-card">
+          <h3>결정사항</h3>
+          <ul id="decision-list" class="plain-list"></ul>
+        </article>
+        <article class="summary-card">
+          <h3>Transcript</h3>
+          <div id="transcript-content" class="transcript-box"></div>
+        </article>
       </section>
 
       <section class="panel left-panel">
-        <h2>담당자별 To-Do</h2>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Action Items</p>
+            <h2>담당자별 To-Do</h2>
+          </div>
+        </div>
         <div id="todo-root" class="todo-list"></div>
+        <hr class="divider" />
+        <div class="detail-meta">
+          <h3>처리 정보</h3>
+          <dl class="meta-list">
+            <div>
+              <dt>원본 파일</dt>
+              <dd id="source-file">-</dd>
+            </div>
+            <div>
+              <dt>워크스페이스</dt>
+              <dd id="workspace-name">-</dd>
+            </div>
+            <div>
+              <dt>실패 사유</dt>
+              <dd id="failure-reason">없음</dd>
+            </div>
+          </dl>
+        </div>
       </section>
     </main>
 

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Minutes - Dashboard</title>
+    <title>MeetUs - Workspace Archive</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,31 +12,50 @@
   <body>
     <header class="mobile-topbar">
       <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
-      <strong>AI Minutes</strong>
+      <strong>MeetUs</strong>
     </header>
     <div id="mobile-overlay" class="mobile-overlay" aria-hidden="true"></div>
 
     <main class="workspace">
       <aside class="sidebar">
-        <h1>AI Minutes</h1>
-        <p class="muted">회의 요약 & To-Do</p>
+        <h1>MeetUs</h1>
+        <p class="muted">회의 요약 & To-Do Archive</p>
         <nav class="menu">
-          <a class="menu-item active" href="./index.html">Dashboard</a>
-          <a class="menu-item" href="#">Archive</a>
-          <a class="menu-item" href="#">Settings</a>
+          <a class="menu-item" href="./workspaces.html">Workspaces</a>
+          <a class="menu-item active" href="./index.html">Archive</a>
+          <a class="menu-item" href="./meeting.html?id=mtg-001">Meeting Detail</a>
         </nav>
+        <div class="sidebar-note">
+          <p class="eyebrow">Mock Mode</p>
+          <p class="muted">현재 화면은 API/DB 미연동 상태를 가정한 프론트엔드 목업입니다.</p>
+        </div>
+        <div class="sidebar-note">
+          <p class="eyebrow">Current Workspace</p>
+          <strong id="sidebar-workspace-name">워크스페이스 선택 필요</strong>
+          <p id="sidebar-user-name" class="muted">로그인 사용자</p>
+          <div class="inline-actions">
+            <a class="btn" href="./workspaces.html">워크스페이스 변경</a>
+            <button id="logout-btn" class="btn" type="button">로그아웃</button>
+          </div>
+        </div>
       </aside>
 
       <section class="panel left-panel">
         <div class="panel-head">
-          <h2>파일 업로드</h2>
+          <div>
+            <p class="eyebrow">Upload Page</p>
+            <h2>회의 생성 및 업로드</h2>
+          </div>
         </div>
         <div id="upload-root"></div>
 
         <hr class="divider" />
 
         <div class="panel-head">
-          <h2>상태 요약</h2>
+          <div>
+            <p class="eyebrow">State Summary</p>
+            <h2>상태 요약</h2>
+          </div>
           <span id="meeting-count" class="muted">총 0건</span>
         </div>
         <div id="status-stats" class="stat-grid"></div>
@@ -44,20 +63,68 @@
 
       <section class="panel main-panel">
         <div class="panel-head">
-          <h2>회의 목록</h2>
-          <button id="reload-btn" class="btn">새로고침</button>
+          <div>
+            <p class="eyebrow">Archive Page</p>
+            <h2>회의 Archive</h2>
+          </div>
+          <div class="inline-actions">
+            <button id="reset-btn" class="btn" type="button">목업 초기화</button>
+            <button id="reload-btn" class="btn" type="button">새로고침</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label class="field compact">
+            <span>검색</span>
+            <input id="search-input" type="search" placeholder="회의 제목 또는 참여자 검색" />
+          </label>
+          <label class="field compact">
+            <span>상태</span>
+            <select id="status-filter">
+              <option value="ALL">전체</option>
+              <option value="CREATED">CREATED</option>
+              <option value="UPLOADED">UPLOADED</option>
+              <option value="PROCESSING">PROCESSING</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="FAILED">FAILED</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>정렬</span>
+            <select id="sort-filter">
+              <option value="date-desc">최신순</option>
+              <option value="date-asc">오래된순</option>
+              <option value="status">상태순</option>
+            </select>
+          </label>
         </div>
         <div id="meeting-list" class="meeting-list"></div>
-        <p id="empty-state" class="muted hidden">회의 데이터가 없습니다.</p>
+        <p id="empty-state" class="empty-state hidden">조건에 맞는 회의가 없습니다.</p>
       </section>
 
       <aside class="panel info-panel">
-        <h2>안내</h2>
-        <ul class="plain-list muted">
-          <li>업로드 후 상태가 순차적으로 변경됩니다.</li>
-          <li>회의를 클릭하면 요약/To-Do를 확인할 수 있습니다.</li>
-          <li>현재는 mock API 기반입니다.</li>
-        </ul>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">UX Guide</p>
+            <h2>사용자 안내</h2>
+          </div>
+        </div>
+        <div class="info-stack">
+          <article class="info-card">
+            <h3>현재 동작</h3>
+            <ul class="plain-list muted">
+              <li>업로드 후 상태가 `CREATED → UPLOADED → PROCESSING → COMPLETED` 순서로 변경됩니다.</li>
+              <li>상세 화면에서는 처리 중 상태를 polling으로 재조회합니다.</li>
+              <li>실패 상태 회의는 재처리 버튼을 통해 다시 진행할 수 있습니다.</li>
+            </ul>
+          </article>
+          <article class="info-card">
+            <h3>목업 기준</h3>
+            <ul class="plain-list muted">
+              <li>현재는 `localStorage` 기반 mock 데이터로 동작합니다.</li>
+              <li>API, DB 연동 후에도 동일한 UI 흐름을 유지하도록 설계했습니다.</li>
+            </ul>
+          </article>
+        </div>
       </aside>
     </main>
 

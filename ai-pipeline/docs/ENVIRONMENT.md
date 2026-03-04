@@ -8,9 +8,9 @@
 
 ## 2. 네이밍 컨벤션 (Naming Conventions)
 데이터베이스와 애플리케이션 간의 데이터 매핑 오류를 방지하기 위해 다음 규칙을 절대적으로 엄수합니다.
-* **데이터베이스 (DB):** 모든 테이블명 및 컬럼명은 `Snake Case`를 사용합니다. (예: `meeting_id`, `created_at`)
-* **기본키 (PK):** 모든 DB 테이블의 PK는 `Long` 타입을 사용합니다.
-* **코드 레벨 (Java/FE):** 변수명 및 메서드명은 `Camel Case`를 적용합니다. (예: `meetingId`, `createdAt`)
+* **데이터베이스 (DB):** 모든 테이블명 및 컬럼명은 `snake_case`를 사용합니다. (예: `meeting_id`, `created_at`)
+* **기본키 (PK):** 모든 DB 테이블의 PK는 내부적으로 큰 정수타입을 사용합니다. (`Long`, 파이썬 `int`)
+* **API 및 코드 레벨 (Python):** 전사 백엔드가 파이썬(Python) 기반이므로, 모든 변수명과 API 응답 필드명은 `snake_case`를 엄수합니다.
 
 ## 3. Git 브랜치 전략
 * **작업 규칙:** 모든 기능 개발은 각자의 역할이 명시된 `feat/[이름]-[역할]` 브랜치에서 진행 후 Pull Request(PR)를 통해 병합합니다. (예: `feat/juhn-sa`)

@@ -24,3 +24,6 @@ Archive
  ├ 날짜 필터
  └ 회의 조회
 ```
+
+ECS Frontend Service 배포 + ALB 연결
+<img src="/img/front.png">

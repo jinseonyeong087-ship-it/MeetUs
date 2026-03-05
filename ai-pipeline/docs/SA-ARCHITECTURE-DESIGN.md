@@ -9,14 +9,14 @@ AI 로직은 유지보수와 단위 테스트(Unit Test)의 용이성을 위해 
 
 ```text
 ai-pipeline/
-├── .env                  # (Git 제외) AWS 및 OpenAI API 핵심 보안 키 
+├── .env                  # (Git 제외) AWS 연동 핵심 보안 키 
 ├── docs/                 # 기획, 아키텍처, 기능 명세 및 플레이북 가이드
 └── src/                  # 파이썬 메인 소스코드 디렉토리
     ├── config.py         # 1. 중앙 환경 변수 로드 및 통제소
     ├── sqs_listener.py   # 2. 메시지 수신 및 전체 파이프라인(Main) 컨트롤러 
     ├── core/             # 3. AI 변환 코어 비즈니스 로직
     │   ├── stt_processor.py # 음성 -> 텍스트 변환 (AWS Transcribe)
-    │   └── llm_processor.py # 텍스트 -> 요약/할일 JSON 변환 (OpenAI)
+    │   └── llm_processor.py # 텍스트 -> 요약/할일 JSON 변환 (Amazon Bedrock)
     └── network/          # 4. 외부 통신 로직
         └── api_client.py    # 결과물 DB 적재를 위한 Core API 서버 통신
 ```
@@ -24,7 +24,7 @@ ai-pipeline/
 ## 2. 모듈별 세부 역할 및 Flow
 
 ### ⚙️ 시스템 컨트롤: `src/config.py` & `src/sqs_listener.py`
-*   `config.py`: `.env` 파일을 로드하여 `AWS_ACCESS_KEY_ID`, `OPENAI_API_KEY` 등을 파이썬 변수로 메모리에 올립니다. 모든 보안 키는 오직 여기서만 관리됩니다.
+*   `config.py`: `.env` 파일을 로드하여 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` 등을 파이썬 변수로 메모리에 올립니다. 모든 보안 키는 오직 여기서만 관리됩니다.
 *   `sqs_listener.py`: 파이프라인의 심장입니다. AWS SQS를 24시간 롱 폴링(20초 대기)하다가 `UPLOADED` 이벤트 메시지가 오면 낚아채서 `stt` -> `llm` -> `api` 모듈들을 순서대로 지휘(Orchestrate)합니다. **(최대 3회 실패 시 FAILED 처리 로직 포함)**
 
 ### 🧠 코어 로직: `core/stt_processor.py` & `core/llm_processor.py`

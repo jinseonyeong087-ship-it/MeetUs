@@ -5,8 +5,8 @@
 ## 🛠️ Tech Stack
 - **Language:** Python 3.10+ [cite: User Summary]
 - **Cloud:** AWS (S3, SQS, Transcribe) [cite: User Summary]
-- **AI Model:** OpenAI GPT-4o [cite: User Summary]
-- **Libraries:** Boto3, OpenAI-Python, Requests, Dotenv [cite: User Summary]
+- **AI Model:** Amazon Bedrock (Claude 3) [cite: User Summary]
+- **Libraries:** Boto3, Requests, Dotenv [cite: User Summary]
 
 ## 📂 Directory Structure
 - `src/`: AI 파이프라인 핵심 로직 (SQS Listener, STT Worker, LLM Analyzer)

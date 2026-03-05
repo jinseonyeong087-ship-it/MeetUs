@@ -3,9 +3,9 @@
 **목표:** AWS SQS 메시지를 수신하여 음성을 텍스트로 변환(STT)하고, LLM을 통해 요약 및 To-Do를 추출하여 Core API(DB)에 전달한다.
 
 ## 🏃‍♂️ Phase 1: 개발 환경 및 클라우드 연동 세팅
-- [v] 파이썬 가상환경 세팅 및 필수 라이브러리 설치 (`boto3`, `openai`, `requests` 등)
+- [v] 파이썬 가상환경 세팅 및 필수 라이브러리 설치 (`boto3`, `requests` 등)
 - [v] AWS IAM 권한 설정 (S3 읽기, SQS 읽기/삭제, Transcribe 접근 권한)
-- [v] 환경 변수(`.env`) 세팅 (AWS Access Key, OpenAI API Key 등 - **절대 GitHub에 올리지 말 것!**)
+- [v] 환경 변수(`.env`) 세팅 (AWS Access Key 등 - **절대 GitHub에 올리지 말 것!**)
 
 ## 📡 Phase 2: SQS 통신 및 데이터베이스 연동
 - [ ] AWS SQS 폴링(Polling) 리스너 구현 (새 메시지가 올 때까지 대기하고 낚아채기)
@@ -20,7 +20,7 @@
 - [ ] 변환 완료된 원본 텍스트(Transcript) 추출 및 정제
 - [ ] DB 상태 업데이트 로직 구현 2: STT 완료 후 `[SUMMARIZING]`으로 상태 변경
 
-## 🧠 Phase 4: OpenAI (LLM) 기반 요약 및 To-Do 추출
+## 🧠 Phase 4: Amazon Bedrock (LLM) 기반 요약 및 To-Do 추출
 - [ ] 프롬프트 엔지니어링 1: 원본 텍스트 기반 핵심 회의록 요약(5~7줄 + 결정사항) 프롬프트 작성
 - [ ] 프롬프트 엔지니어링 2: 요약본 기반 담당자별 To-Do List 추출 프롬프트 작성
   - *Point:* 반드시 정형화된 JSON 형태(`assignee`, `task`, `due_date`)로 응답받도록 LLM 파라미터(Response Format) 설정

@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-# .env 파일 로드 (루트 디렉토리 기준)
-load_dotenv()
+# .env 파일 로드 (루트 디렉토리 기준 절대 경로 지정)
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.env'))
+load_dotenv(dotenv_path=env_path)
 
 class Config:
     """
@@ -15,9 +16,7 @@ class Config:
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
     
-    # [OpenAI Settings]
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    
+
     # [Network Settings]
     CORE_API_URL = os.getenv("CORE_API_URL", "http://localhost:8080/api/v1")
 

@@ -17,7 +17,7 @@ currentUserEl.textContent = session.user.userId;
 logoutBtn.addEventListener('click', logoutMock);
 
 function renderMetrics(meetings) {
-  const statuses = ['UPLOADED', 'TRANSCRIBING', 'SUMMARIZING', 'COMPLETED'];
+  const statuses = ['CREATED', 'UPLOADED', 'PROCESSING', 'COMPLETED', 'FAILED'];
   metricsGridEl.innerHTML = '';
 
   statuses.forEach((status) => {

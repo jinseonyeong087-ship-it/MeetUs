@@ -1,22 +1,25 @@
-import { seedAccounts, seedUser } from './mockData.js';
-
 const SESSION_KEY = 'meetus-mock-session';
-const ACCOUNTS_KEY = 'meetus-mock-accounts';
+const API_BASE_URL = window.__API_BASE_URL || '';
 
-function ensureAccounts() {
-  const raw = window.localStorage.getItem(ACCOUNTS_KEY);
-  if (!raw) {
-    window.localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(seedAccounts));
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json')
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    const message = payload?.message || '요청 처리 중 오류가 발생했습니다.';
+    throw new Error(message);
   }
-}
-
-function getAccounts() {
-  ensureAccounts();
-  return JSON.parse(window.localStorage.getItem(ACCOUNTS_KEY) || '[]');
-}
-
-function saveAccounts(accounts) {
-  window.localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  return payload;
 }
 
 export function getCurrentSession() {
@@ -33,26 +36,51 @@ export function requireSession() {
   return session;
 }
 
+export function getAccessToken() {
+  return getCurrentSession()?.accessToken || '';
+}
+
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((char) => `%${`00${char.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .join('')
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export async function loginMock({ userId, password }) {
-  if (!userId?.trim() || !password?.trim()) {
-    throw new Error('유저 ID와 비밀번호를 입력해주세요.');
+  const email = userId?.trim();
+  if (!email || !password?.trim()) {
+    throw new Error('이메일과 비밀번호를 입력해주세요.');
   }
 
-  const account = getAccounts().find(
-    (item) => item.userId === userId.trim() && item.password === password.trim()
-  );
+  const payload = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password: password.trim() })
+  });
 
-  if (!account) {
-    throw new Error('유저 ID 또는 비밀번호가 올바르지 않습니다.');
+  const accessToken = payload?.access_token;
+  if (!accessToken) {
+    throw new Error('로그인 토큰을 받지 못했습니다.');
   }
+  const tokenClaims = decodeJwtPayload(accessToken) || {};
 
   const session = {
     user: {
-      ...seedUser,
-      userId: account.userId,
-      name: account.name,
-      email: account.email
+      userId: tokenClaims.user_id || tokenClaims.sub || email,
+      name: tokenClaims.name || email.split('@')[0],
+      email: tokenClaims.email || email
     },
+    accessToken,
     loggedInAt: new Date().toISOString()
   };
 
@@ -61,24 +89,23 @@ export async function loginMock({ userId, password }) {
 }
 
 export async function signupMock({ userId, name, email, password }) {
-  if (!userId?.trim() || !name?.trim() || !email?.trim() || !password?.trim()) {
+  if (!name?.trim() || !email?.trim() || !password?.trim()) {
     throw new Error('회원가입 정보를 모두 입력해주세요.');
   }
 
-  const accounts = getAccounts();
-  if (accounts.some((item) => item.userId === userId.trim())) {
-    throw new Error('이미 사용 중인 유저 ID입니다.');
-  }
-
-  const account = {
-    userId: userId.trim(),
+  return request('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: email.trim(),
+      name: name.trim(),
+      password: password.trim()
+    })
+  }).then((account) => ({
+    userId: account?.user_id || userId?.trim() || email.trim(),
     name: name.trim(),
     email: email.trim(),
     password: password.trim()
-  };
-
-  saveAccounts([account, ...accounts]);
-  return account;
+  }));
 }
 
 export function logoutMock() {

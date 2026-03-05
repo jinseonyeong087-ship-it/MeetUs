@@ -24,7 +24,7 @@ const currentWorkspace = requireWorkspace();
 mountUploadZone(uploadRoot, {
   workspace: currentWorkspace,
   onComplete(meeting) {
-    window.location.href = `./meeting.html?id=${encodeURIComponent(meeting.id)}`;
+    window.location.href = `./meeting.html?id=${encodeURIComponent(meeting.meetingId)}`;
   }
 });
 
@@ -60,7 +60,7 @@ function getFilters() {
     query: searchInputEl.value,
     status: statusFilterEl.value,
     sort: sortFilterEl.value,
-    workspaceId: currentWorkspace.id
+    workspaceId: currentWorkspace.workspaceId
   };
 }
 
@@ -72,7 +72,7 @@ async function renderMeetings() {
     const meetings = await getMeetings(getFilters());
 
     meetingCountEl.textContent = `총 ${meetings.length}건`;
-    renderStats(await getMeetings({ workspaceId: currentWorkspace.id }));
+    renderStats(await getMeetings({ workspaceId: currentWorkspace.workspaceId }));
 
     if (!meetings.length) {
       emptyStateEl.classList.remove('hidden');

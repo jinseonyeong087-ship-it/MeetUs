@@ -111,7 +111,7 @@ export function mountUploadZone(rootElement, options = {}) {
       });
 
       updateProgress(35, 'Presigned URL 발급', '업로드 경로를 준비하고 있습니다.');
-      await startMockUpload(meeting.meetingId, { fileName: selectedFile.name });
+      await startMockUpload(meeting.meetingId, { file: selectedFile });
 
       let progress = 35;
       const timer = window.setInterval(() => {

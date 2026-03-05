@@ -132,7 +132,7 @@ function updateStatus(meeting) {
 
 async function renderMeeting() {
   const meeting = await getMeetingById(meetingId);
-  if (meeting.workspaceId !== workspace.workspaceId) {
+  if (meeting.workspaceId && meeting.workspaceId !== workspace.workspaceId) {
     titleEl.textContent = '접근 불가';
     metaEl.textContent = '현재 선택한 워크스페이스의 회의만 조회할 수 있습니다.';
     stopPolling();
@@ -149,7 +149,7 @@ async function renderMeeting() {
   renderDecisions(meeting.decisions);
   renderTodos(meeting.actionItems);
 
-  if (['UPLOADED', 'TRANSCRIBING', 'SUMMARIZING'].includes(displayStatus)) {
+  if (['CREATED', 'UPLOADED', 'PROCESSING'].includes(displayStatus)) {
     startPolling();
   } else {
     stopPolling();

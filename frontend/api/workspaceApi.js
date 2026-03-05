@@ -36,7 +36,25 @@ function saveWorkspaces(workspaces) {
   window.localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces.map(normalizeWorkspace)));
 }
 
+function ensurePersonalWorkspace(userId) {
+  const current = getAllWorkspaces();
+  if (current.some((workspace) => workspace.memberUserIds.includes(userId))) {
+    return;
+  }
+
+  const personal = normalizeWorkspace({
+    workspaceId: `ws_${userId.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    name: 'Personal Workspace',
+    description: 'TA API에 워크스페이스 엔드포인트가 없어 기본 워크스페이스를 사용합니다.',
+    ownerUserId: userId,
+    memberUserIds: [userId]
+  });
+
+  saveWorkspaces([personal, ...current]);
+}
+
 function syncCurrentWorkspace(userId) {
+  ensurePersonalWorkspace(userId);
   const visible = getAllWorkspaces().filter((workspace) => workspace.memberUserIds.includes(userId));
   const rawCurrent = window.localStorage.getItem(CURRENT_WORKSPACE_KEY);
   const current = rawCurrent ? JSON.parse(rawCurrent) : null;
@@ -60,6 +78,7 @@ export function getVisibleWorkspaces() {
   const session = getCurrentSession();
   if (!session?.user?.userId) return [];
   const userId = session.user.userId;
+  ensurePersonalWorkspace(userId);
   return getAllWorkspaces()
     .filter((workspace) => workspace.memberUserIds.includes(userId))
     .map((workspace) => ({

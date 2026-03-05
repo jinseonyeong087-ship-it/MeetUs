@@ -55,16 +55,17 @@ class APIClient:
 
     def submit_ai_result(self, meeting_id: str, transcript: str, summary_data: dict, todo_data: list):
         """
-        STT 및 LLM 처리가 모두 끝난 최종 데이터 뭉치를 Core API로 전송하여 DB에 적재합니다.
+        STT 및 Bedrock 처리 결과물을 Core API 웹훅으로 전송하여 DB에 적재합니다.
         
         :param meeting_id: 회의 식별자
         :param transcript: STT 전체 원본 텍스트
         :param summary_data: 5~7줄 요약 및 결정사항 딕셔너리
         :param todo_data: JSON 형식으로 파싱된 담당자별 To-Do 배열
         """
-        endpoint = f"/meetings/{meeting_id}/result"
+        endpoint = "/internal/ai/result"  # 명세서(api-spec.md) 기준 내부 통신 엔드포인트
         payload = {
-            "transcript_text": transcript,
+            "meeting_id": meeting_id,
+            "transcript": transcript,
             "summary": summary_data.get("summary", ""),
             "decisions": summary_data.get("decisions", ""),
             "todos": todo_data

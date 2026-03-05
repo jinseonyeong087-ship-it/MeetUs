@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-# .env 파일 로드 (루트 디렉토리 기준 절대 경로 지정)
-env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.env'))
+# .env 파일 로드 (src 폴더 한 단계 위의 루트 디렉토리 기준)
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../.env'))
 load_dotenv(dotenv_path=env_path)
 
 class Config:

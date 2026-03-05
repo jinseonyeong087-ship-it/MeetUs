@@ -62,3 +62,17 @@
 - **변경 전:** LLM 요약 본체로 외부 API인 `OpenAI (GPT-4o)` 사용 및 `OPENAI_API_KEY` 환경변수 세팅 요구.
 - **변경 후:** 외부 유출 보안 및 아키텍처 일관성(All AWS) 확보를 위해 `Amazon Bedrock (Claude 3 Sonnet)`으로 전면 마이그레이션 적용 및 `openai` 라이브러리/키 완전 제거.
 - **수정 사유:** 비즈니스 요구사항(AWS 내부 보안 처리)을 충족하면서 비용 및 설정 복잡도를 최적화하기 위함.
+
+### 🔄 [변경/수정: MODIFICATION]
+- **일시:** 2026-03-05
+- **변경 위치:** `src/network/api_client.py` 내부 `submit_ai_result` 함수
+- **변경 전:** `POST /meetings/{meetingId}/result` 전송 및 payload 내 `transcript_text` 필드명 사용
+- **변경 후:** `POST /internal/ai/result` 전송 및 payload 최상단 `meeting_id` 포함, `transcript` 필드명 사용 변경
+- **수정 사유:** TA(단비님)가 최근 업데이트한 Backend API 명세서(`TA/api-spec.md`)의 Internal Webhook 통신 규격에 맞춰 엔진의 전송 스펙을 최신화(Sync)함.
+
+### 🔄 [변경/수정: MODIFICATION]
+- **일시:** 2026-03-05
+- **변경 위치:** `ai-pipeline/docs/FEATURES.md` 및 `ai_context/project_current/AWS_RULES.md`
+- **변경 전:** 회의록 진행 상태를 `TRANSCRIBING` -> `SUMMARIZING` -> `TODO_EXTRACTING` 등의 5단계로 세분화.
+- **변경 후:** Backend API 명세서(api-spec.md)의 단순화된 전이 규격에 맞춰 `TRANSCRIBING` -> `PROCESSING` -> `COMPLETED` 3단계로 통합 및 덮어쓰기 적용.
+- **수정 사유:** 파이프라인의 내부 세세한 상태(STT/LLM 전이)보다, 프론트엔드와 코어 API 간의 직관적인 공통 상태값 규격(PROCESSING)을 따르기 위함.

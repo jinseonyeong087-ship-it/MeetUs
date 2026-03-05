@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetUs - 로그인</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <main class="auth-shell">
+      <section class="auth-panel">
+        <p class="eyebrow" style="color: rgba(255,255,255,0.68);">MeetUs</p>
+        <h1>AI 회의 요약 및 To-Do 아카이브</h1>
+        <p>회의 업로드, 전사, AI Summary, Action Items, Archive 검색까지 두 주짜리 프로토타입 범위에 맞춰 정리한 회의 기록 플랫폼입니다.</p>
+        <div class="sidebar-card">
+          <h3>프로토타입 범위</h3>
+          <ul>
+            <li>회의 음성 업로드</li>
+            <li>전사 결과 확인</li>
+            <li>AI 요약 확인</li>
+            <li>액션 아이템 추출</li>
+            <li>아카이브 검색</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="auth-card-wrap">
+        <div class="auth-card">
+          <div class="topbar-actions" style="justify-content: flex-start; margin-bottom: 10px;">
+            <button id="show-login-btn" class="btn btn-primary" type="button">로그인</button>
+            <button id="show-signup-btn" class="btn" type="button">회원가입</button>
+          </div>
+
+          <section id="login-section">
+            <p class="eyebrow">Login</p>
+            <h2>MeetUs 로그인</h2>
+            <p class="muted">유저 ID와 비밀번호만 입력하면 로그인할 수 있습니다.</p>
+
+            <form id="login-form" class="auth-form">
+              <div class="field">
+                <label for="user-id-input">유저 ID</label>
+                <input id="user-id-input" type="text" placeholder="예: usr_001" required />
+              </div>
+              <div class="field">
+                <label for="password-input">비밀번호</label>
+                <input id="password-input" type="password" placeholder="비밀번호 입력" required />
+              </div>
+              <button class="btn btn-primary" type="submit">로그인</button>
+            </form>
+
+            <p id="login-error" class="muted" style="margin-top: 12px;"></p>
+          </section>
+
+          <section id="signup-section" class="hidden">
+            <p class="eyebrow">Sign Up</p>
+            <h2>계정 생성</h2>
+            <p class="muted">회원가입 후 같은 화면에서 바로 로그인할 수 있습니다.</p>
+
+            <form id="signup-form" class="auth-form">
+              <div class="field">
+                <label for="signup-user-id-input">유저 ID</label>
+                <input id="signup-user-id-input" type="text" placeholder="예: usr_010" required />
+              </div>
+              <div class="field">
+                <label for="signup-name-input">이름</label>
+                <input id="signup-name-input" type="text" placeholder="이름 입력" required />
+              </div>
+              <div class="field">
+                <label for="signup-email-input">이메일</label>
+                <input id="signup-email-input" type="email" placeholder="name@meetus.app" required />
+              </div>
+              <div class="field">
+                <label for="signup-password-input">비밀번호</label>
+                <input id="signup-password-input" type="password" placeholder="비밀번호 입력" required />
+              </div>
+              <button class="btn btn-primary" type="submit">회원가입</button>
+            </form>
+
+            <p id="signup-error" class="muted" style="margin-top: 12px;"></p>
+          </section>
+
+          <div class="auth-helper">
+            <p class="eyebrow">Demo Mode</p>
+            <p class="muted">예: `usr_001 / 1234` 로 로그인하거나, 새 계정을 만든 뒤 그 ID로 워크스페이스 초대 흐름을 테스트할 수 있습니다.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./pages/login.js"></script>
+  </body>
+</html>

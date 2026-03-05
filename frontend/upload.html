@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetUs - 회의 업로드</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <h1>MeetUs</h1>
+        </div>
+        <nav class="nav-group">
+          <a class="nav-item" href="./dashboard.html">대시보드</a>
+          <a class="nav-item active" href="./upload.html">회의 업로드</a>
+          <a class="nav-item" href="./index.html">회의 목록</a>
+          <a class="nav-item" href="./archive.html">아카이브</a>
+        </nav>
+        <div class="sidebar-card">
+          <h3>업로드 규칙</h3>
+          <ul>
+            <li>지원 포맷: m4a</li>
+            <li>최대 파일 크기: 30MB</li>
+            <li>Presigned URL 업로드 방식</li>
+          </ul>
+        </div>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="sidebar-logout-btn" type="button">로그아웃</button>
+        </div>
+      </aside>
+
+      <section class="content-shell">
+        <header class="topbar">
+          <div class="page-title">
+            <p class="eyebrow">Upload Meeting</p>
+            <h2>음성 업로드</h2>
+            <p>회의 메타데이터 입력 후 음성 파일을 업로드합니다.</p>
+          </div>
+          <div class="topbar-actions">
+            <span id="current-workspace" class="muted"></span>
+            <span id="current-user" class="muted"></span>
+            <a class="btn" href="./workspaces.html">워크스페이스</a>
+            <a class="btn" href="./workspaces.html?modal=create">워크스페이스 생성</a>
+          </div>
+        </header>
+
+        <section id="upload-root"></section>
+      </section>
+    </main>
+
+    <script type="module" src="./pages/uploadPage.js"></script>
+  </body>
+</html>

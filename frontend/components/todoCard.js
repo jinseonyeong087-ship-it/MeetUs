@@ -5,10 +5,12 @@ export function createTodoCard(todo) {
   card.className = 'todo-card';
 
   card.innerHTML = `
-    <h4>${escapeHtml(todo.assignee)}</h4>
+    <div class="todo-card-head">
+      <h4>${escapeHtml(todo.assignee)}</h4>
+      <span class="badge ${todo.done ? 'todo-status-completed' : 'todo-status-open'}">${todo.done ? '완료' : '진행중'}</span>
+    </div>
     <p>${escapeHtml(todo.task)}</p>
-    <p class="muted">마감: ${escapeHtml(todo.dueDate)}</p>
-    <span class="badge ${todo.done ? 'todo-status-completed' : 'todo-status-open'}">${todo.done ? '완료' : '진행중'}</span>
+    <p class="muted">마감: ${escapeHtml(todo.dueDate || '미정')}</p>
   `;
 
   return card;

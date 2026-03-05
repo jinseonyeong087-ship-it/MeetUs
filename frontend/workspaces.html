@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetUs - 워크스페이스</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <h1>MeetUs</h1>
+          <p>워크스페이스 진입 화면</p>
+        </div>
+
+        <nav class="nav-group">
+          <a class="nav-item active" href="./workspaces.html">워크스페이스</a>
+          <a class="nav-item" href="./dashboard.html">대시보드</a>
+          <a class="nav-item" href="./index.html">회의 목록</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="sidebar-logout-btn" type="button">로그아웃</button>
+        </div>
+      </aside>
+
+      <section class="content-shell">
+        <header class="topbar">
+          <div class="page-title">
+            <p class="eyebrow">Workspace Selection</p>
+            <h2>워크스페이스 선택</h2>
+            <p>워크스페이스를 선택하면 Meetings, Upload, Archive 화면에서 동일한 UI 톤으로 작업을 이어갑니다.</p>
+          </div>
+          <div class="topbar-actions">
+            <span id="current-user" class="muted"></span>
+            <span id="workspace-count" class="muted">0 workspaces</span>
+            <button id="open-workspace-modal-btn" class="btn" type="button">워크스페이스 생성</button>
+          </div>
+        </header>
+
+        <section class="workspace-grid">
+          <div>
+            <section id="workspace-list" class="workspace-list"></section>
+            <div id="workspace-pagination" class="pagination hidden"></div>
+          </div>
+
+          <aside class="workspace-side-stack">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                <p class="eyebrow">Personal Archive</p>
+                <h3>개인 보관함 안내</h3>
+                </div>
+              </div>
+              <p class="muted">개인 워크스페이스를 선택하면 개인 음성 메모, 인터뷰, 회의 기록도 같은 업로드 흐름으로 관리할 수 있습니다.</p>
+            </article>
+
+            <article class="card">
+              <div class="card-head">
+                <div>
+                <p class="eyebrow">Core Actions</p>
+                <h3>사용 가능 기능</h3>
+                </div>
+              </div>
+              <ul class="muted" style="margin: 0; padding-left: 18px; line-height: 1.8;">
+                <li>회의 업로드</li>
+                <li>AI Summary 확인</li>
+                <li>Action Items 조회</li>
+                <li>Archive 검색 및 재조회</li>
+              </ul>
+            </article>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <div id="workspace-modal" class="modal-overlay">
+      <div class="modal-panel">
+        <p class="eyebrow">Create Workspace</p>
+        <h2 style="margin: 0;">새 워크스페이스 생성</h2>
+        <p class="muted" style="margin: 8px 0 0;">워크스페이스를 만들고 유저 ID 기준으로 멤버를 초대할 수 있습니다.</p>
+        <form id="workspace-form" class="auth-form">
+          <div class="field">
+            <label for="workspace-name-input">워크스페이스 이름</label>
+            <input id="workspace-name-input" type="text" placeholder="예: Product Team" />
+          </div>
+          <div class="field">
+            <label for="workspace-description-input">설명</label>
+            <input id="workspace-description-input" type="text" placeholder="워크스페이스 소개" />
+          </div>
+          <p id="workspace-error" class="muted" style="margin: 0;"></p>
+          <div class="modal-actions">
+            <button id="close-workspace-modal-btn" class="btn" type="button">취소</button>
+            <button class="btn btn-primary" type="submit">생성</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="./pages/workspaces.js"></script>
+  </body>
+</html>

@@ -93,7 +93,7 @@ Storage
 - Python
 
 ## AI
-- OpenAI API
+- AWS Bedrock
 - AWS Transcribe
 
 ## Database

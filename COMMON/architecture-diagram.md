@@ -10,7 +10,7 @@
 - Object Storage(오디오/결과 파일)
 - CloudWatch Logs / CloudWatch Alarms
 - Email Alert
-- External STT/LLM API
+- AWS Transcribe + Amazon Bedrock (Claude 3)
 
 ## Mermaid Diagram
 ```mermaid
@@ -28,7 +28,7 @@ flowchart LR
     L --> H[CloudWatch Metrics / Alarms]
     C --> H
     H --> I[Email Alert]
-    E --> F[External STT / LLM API]
+    E --> F[AWS Transcribe + Amazon Bedrock]
 ```
 
 ## 설계 원칙
@@ -39,6 +39,6 @@ flowchart LR
 - ECS 서비스 로그는 CloudWatch Logs로 수집하고 핵심 장애 지표는 Email로 알린다
 
 ## 운영 고려 항목
-- 외부 STT/LLM 제공자 확정
+- Bedrock 모델/호출 정책 확정
 - 처리 실패 사유 코드 표준화
 - 보관 기간 정책

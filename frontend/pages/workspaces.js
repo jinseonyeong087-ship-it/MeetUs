@@ -27,6 +27,12 @@ currentUserEl.textContent = `${session.user.userId} · ${session.user.email}`;
 const params = new URLSearchParams(window.location.search);
 const PAGE_SIZE = 5;
 let currentPage = 1;
+let workspaceCache = [];
+
+async function loadWorkspaces() {
+  workspaceCache = await getVisibleWorkspaces();
+  return workspaceCache;
+}
 
 function openWorkspaceModal() {
   workspaceModalEl.classList.add('active');
@@ -81,8 +87,8 @@ function createPagination(totalItems, page, onChange) {
 function createWorkspaceCard(workspace) {
   const current = getCurrentWorkspace();
   const isCurrent = current?.workspaceId === workspace.workspaceId;
-  const isOwner = workspace.ownerUserId === session.user.userId;
-  const roleLabel = isOwner ? '소유자' : '멤버';
+  const isOwner = workspace.role === 'OWNER';
+  const roleLabel = isOwner ? 'OWNER' : 'MEMBER';
   const card = document.createElement('article');
   card.className = 'card';
   card.innerHTML = `
@@ -93,10 +99,10 @@ function createWorkspaceCard(workspace) {
       </div>
       <span class="badge ${isCurrent ? 'stage-COMPLETED' : 'stage-UPLOADED'}">${isCurrent ? '현재 선택' : '선택 가능'}</span>
     </div>
-    <p class="muted" style="margin: 0 0 14px;">${workspace.description}</p>
-    <p class="muted" style="margin: 0 0 14px;">멤버: ${workspace.memberUserIds.join(', ')}</p>
+    <p class="muted" style="margin: 0 0 14px;">${workspace.description || '워크스페이스 설명 정보가 없습니다.'}</p>
+    <p class="muted" style="margin: 0 0 14px;">권한: ${roleLabel}</p>
     <div class="meeting-card-foot">
-      <span class="muted">${workspace.memberCount}명</span>
+      <span class="muted">ID: ${workspace.workspaceId}</span>
       <button class="btn ${isCurrent ? '' : 'btn-primary'}" type="button">${isCurrent ? '회의 보기' : '선택하기'}</button>
     </div>
     <div class="workspace-actions">
@@ -105,8 +111,8 @@ function createWorkspaceCard(workspace) {
     ${isOwner ? `
       <div class="auth-form" style="margin-top: 16px;">
         <div class="field">
-          <label for="invite-${workspace.workspaceId}">유저 ID 초대</label>
-          <input id="invite-${workspace.workspaceId}" type="text" placeholder="예: usr_002" />
+          <label for="invite-${workspace.workspaceId}">이메일 초대</label>
+          <input id="invite-${workspace.workspaceId}" type="email" placeholder="예: member@test.com" />
         </div>
         <button class="btn" type="button" data-invite="${workspace.workspaceId}">유저 초대</button>
       </div>
@@ -114,7 +120,7 @@ function createWorkspaceCard(workspace) {
   `;
 
   card.querySelector('button').addEventListener('click', () => {
-    setCurrentWorkspace(workspace.workspaceId);
+    setCurrentWorkspace(workspace);
     window.location.href = './index.html';
   });
 
@@ -122,35 +128,38 @@ function createWorkspaceCard(workspace) {
     const inviteBtn = card.querySelector(`[data-invite="${workspace.workspaceId}"]`);
     const inviteInput = card.querySelector(`#invite-${workspace.workspaceId}`);
     const deleteBtn = card.querySelector('[data-delete]');
-    inviteBtn.addEventListener('click', () => {
+    inviteBtn.addEventListener('click', async () => {
       try {
-        inviteUserToWorkspace(workspace.workspaceId, inviteInput.value);
+        await inviteUserToWorkspace(workspace.workspaceId, inviteInput.value);
         inviteInput.value = '';
-        renderWorkspaces();
+        await loadWorkspaces();
+        await renderWorkspaces();
       } catch (error) {
         workspaceErrorEl.textContent = error.message;
       }
     });
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', async () => {
       if (!window.confirm('해당 워크스페이스와 회의 데이터를 삭제하시겠습니까?')) {
         return;
       }
       try {
-        deleteWorkspace(workspace.workspaceId);
-        renderWorkspaces();
+        await deleteWorkspace(workspace.workspaceId);
+        await loadWorkspaces();
+        await renderWorkspaces();
       } catch (error) {
         workspaceErrorEl.textContent = error.message;
       }
     });
   } else {
     const leaveBtn = card.querySelector('[data-leave]');
-    leaveBtn.addEventListener('click', () => {
+    leaveBtn.addEventListener('click', async () => {
       if (!window.confirm('이 워크스페이스에서 나가시겠습니까?')) {
         return;
       }
       try {
-        leaveWorkspace(workspace.workspaceId);
-        renderWorkspaces();
+        await leaveWorkspace(workspace.workspaceId);
+        await loadWorkspaces();
+        await renderWorkspaces();
       } catch (error) {
         workspaceErrorEl.textContent = error.message;
       }
@@ -160,8 +169,8 @@ function createWorkspaceCard(workspace) {
   return card;
 }
 
-function renderWorkspaces() {
-  const workspaces = getVisibleWorkspaces();
+async function renderWorkspaces() {
+  const workspaces = workspaceCache;
   workspaceCountEl.textContent = `${workspaces.length}개 워크스페이스`;
   workspaceListEl.innerHTML = '';
   const totalPages = Math.max(1, Math.ceil(workspaces.length / PAGE_SIZE));
@@ -172,19 +181,22 @@ function renderWorkspaces() {
   workspaces.slice(startIndex, startIndex + PAGE_SIZE).forEach((workspace) => workspaceListEl.appendChild(createWorkspaceCard(workspace)));
   createPagination(workspaces.length, currentPage, (page) => {
     currentPage = page;
-    renderWorkspaces();
+    renderWorkspaces().catch((error) => {
+      workspaceErrorEl.textContent = error.message;
+    });
   });
 }
 
-workspaceFormEl.addEventListener('submit', (event) => {
+workspaceFormEl.addEventListener('submit', async (event) => {
   event.preventDefault();
   workspaceErrorEl.textContent = '';
 
   try {
-    createWorkspace({
+    const workspace = await createWorkspace({
       name: workspaceNameInputEl.value,
       description: workspaceDescriptionInputEl.value
     });
+    setCurrentWorkspace(workspace);
     closeWorkspaceModal();
     window.location.href = './index.html';
   } catch (error) {
@@ -205,4 +217,16 @@ if (params.get('modal') === 'create') {
   openWorkspaceModal();
 }
 
-renderWorkspaces();
+async function init() {
+  try {
+    await loadWorkspaces();
+    if (!getCurrentWorkspace() && workspaceCache.length > 0) {
+      setCurrentWorkspace(workspaceCache[0]);
+    }
+    await renderWorkspaces();
+  } catch (error) {
+    workspaceErrorEl.textContent = error.message;
+  }
+}
+
+init();

@@ -37,7 +37,7 @@ Frontend 서비스를 ECS(Fargate), ALB, CodeDeploy 기반 Blue-Green 구조로 
 |---|---|
 | Frontend Service | 사용자 UI 제공, API 호출, Presigned URL 기반 업로드 수행 |
 | Core API Service | 인증, 회의 생성, 업로드 제어, 상태 관리, 조회 API 제공 |
-| AI Processing Service | SQS 메시지 소비, Transcribe/OpenAI 호출, 결과 저장 |
+| AI Processing Service | SQS 메시지 소비, Transcribe/Amazon Bedrock (Claude 3) 호출, 결과 저장 |
 | ALB | 외부 사용자 요청의 단일 진입점, Blue-Green 트래픽 전환 대상 |
 | S3 | `m4a` 원본 파일 저장, 필요 시 처리 산출물 저장 |
 | SQS | 비동기 AI 처리 요청 큐 |
@@ -54,12 +54,12 @@ Frontend 서비스를 ECS(Fargate), ALB, CodeDeploy 기반 Blue-Green 구조로 
 5. 오디오 파일은 Frontend가 Presigned URL을 사용해 S3에 직접 업로드한다.
 6. 업로드 완료 후 Core API는 SQS에 AI 처리 메시지를 발행한다.
 7. AI Processing Service는 SQS 메시지를 소비하고 S3의 원본 파일을 읽는다.
-8. AI Processing Service는 AWS Transcribe와 OpenAI를 호출해 transcript, 요약, 개인별 To-Do를 생성한다.
+8. AI Processing Service는 AWS Transcribe와 Amazon Bedrock (Claude 3)를 호출해 transcript, 요약, 개인별 To-Do를 생성한다.
 9. 처리 결과는 RDS에 저장되고 회의 상태는 `COMPLETED` 또는 `FAILED`로 갱신된다.
 10. 사용자는 Frontend를 통해 Archive 또는 상세 화면에서 결과를 조회한다.
 
 ### 2.3 요청 흐름 요약
-`사용자 브라우저 → ALB → ECS Frontend → Core API → S3 / SQS → AI Processing Service → AWS Transcribe / OpenAI → RDS`
+`사용자 브라우저 → ALB → ECS Frontend → Core API → S3 / SQS → AI Processing Service → AWS Transcribe / Amazon Bedrock (Claude 3) → RDS`
 
 ---
 
@@ -92,7 +92,7 @@ Frontend 서비스를 ECS(Fargate), ALB, CodeDeploy 기반 Blue-Green 구조로 
 | `RDS_HOST` | RDS 엔드포인트 |
 | `RDS_PORT` | RDS 포트 |
 | `RDS_DB_NAME` | 데이터베이스 이름 |
-| `OPENAI_API_KEY` | OpenAI API 인증 키 |
+| `BEDROCK_MODEL_ID` | Amazon Bedrock (Claude 3) 모델 ID |
 | `TRANSCRIBE_REGION` | AWS Transcribe 호출 리전 |
 | `LOG_LEVEL` | 애플리케이션 로그 레벨 |
 
@@ -166,12 +166,12 @@ Frontend 서비스를 ECS(Fargate), ALB, CodeDeploy 기반 Blue-Green 구조로 
 3. Frontend ECS와 Core API ECS는 Private Subnet에서 동작한다.
 4. Core API는 S3에 Presigned URL을 발급하고 SQS에 비동기 작업 메시지를 발행한다.
 5. AI Processing Service는 Private Subnet에서 SQS 메시지를 소비한다.
-6. AI Processing Service는 외부 API 호출을 위해 NAT 또는 AWS 관리형 outbound 경로를 사용해 AWS Transcribe 및 OpenAI에 접근한다.
+6. AI Processing Service는 외부 API 호출을 위해 NAT 또는 AWS 관리형 outbound 경로를 사용해 AWS Transcribe 및 Amazon Bedrock (Claude 3)에 접근한다.
 7. RDS는 Private Subnet에 배치되어 ECS 서비스에서만 접근 가능하다.
 
 ### 5.3 외부 API 호출 구조
 - AI Processing Service → AWS Transcribe
-- AI Processing Service → OpenAI API
+- AI Processing Service → Amazon Bedrock (Claude 3) API
 - 외부 API 호출은 Frontend가 아니라 백엔드 워커에서만 수행한다.
 - 외부 API 인증 키는 환경 변수 또는 Secret 관리 서비스로 주입한다.
 

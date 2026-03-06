@@ -1,220 +1,123 @@
-import { seedWorkspaces } from './mockData.js';
-import { getCurrentSession } from './sessionApi.js';
-import { removeMeetingsByWorkspace } from './meetingsApi.js';
+import { getAccessToken, getCurrentSession } from './sessionApi.js';
 
-const WORKSPACES_KEY = 'meetus-mock-workspaces';
 const CURRENT_WORKSPACE_KEY = 'meetus-current-workspace';
+const API_BASE_URL = window.__API_BASE_URL || '';
 
-function normalizeWorkspace(workspace) {
-  const ownerUserId = workspace.ownerUserId || 'usr_001';
-  const memberUserIds = workspace.memberUserIds || [ownerUserId];
+function getHeaders(extra = {}) {
+  const token = getAccessToken();
   return {
-    ...workspace,
-    ownerUserId,
-    memberUserIds,
-    memberCount: memberUserIds.length
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extra
   };
 }
 
-function ensureWorkspaces() {
-  const raw = window.localStorage.getItem(WORKSPACES_KEY);
-  if (!raw) {
-    window.localStorage.setItem(WORKSPACES_KEY, JSON.stringify(seedWorkspaces.map(normalizeWorkspace)));
-    return;
-  }
-
-  const parsed = JSON.parse(raw).map(normalizeWorkspace);
-  window.localStorage.setItem(WORKSPACES_KEY, JSON.stringify(parsed));
-}
-
-function getAllWorkspaces() {
-  ensureWorkspaces();
-  return JSON.parse(window.localStorage.getItem(WORKSPACES_KEY) || '[]').map(normalizeWorkspace);
-}
-
-function saveWorkspaces(workspaces) {
-  window.localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces.map(normalizeWorkspace)));
-}
-
-function ensurePersonalWorkspace(userId) {
-  const current = getAllWorkspaces();
-  if (current.some((workspace) => workspace.memberUserIds.includes(userId))) {
-    return;
-  }
-
-  const personal = normalizeWorkspace({
-    workspaceId: `ws_${userId.replace(/[^a-zA-Z0-9]/g, '_')}`,
-    name: 'Personal Workspace',
-    description: 'TA API에 워크스페이스 엔드포인트가 없어 기본 워크스페이스를 사용합니다.',
-    ownerUserId: userId,
-    memberUserIds: [userId]
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.headers || {})
+    }
   });
 
-  saveWorkspaces([personal, ...current]);
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json')
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    const message = payload?.message || '워크스페이스 요청 중 오류가 발생했습니다.';
+    throw new Error(message);
+  }
+  return payload;
 }
 
-function syncCurrentWorkspace(userId) {
-  ensurePersonalWorkspace(userId);
-  const visible = getAllWorkspaces().filter((workspace) => workspace.memberUserIds.includes(userId));
-  const rawCurrent = window.localStorage.getItem(CURRENT_WORKSPACE_KEY);
-  const current = rawCurrent ? JSON.parse(rawCurrent) : null;
-
-  if (current && visible.some((workspace) => workspace.workspaceId === current.workspaceId)) {
-    const nextCurrent = visible.find((workspace) => workspace.workspaceId === current.workspaceId);
-    window.localStorage.setItem(CURRENT_WORKSPACE_KEY, JSON.stringify(nextCurrent));
-    return nextCurrent;
-  }
-
-  if (visible.length > 0) {
-    window.localStorage.setItem(CURRENT_WORKSPACE_KEY, JSON.stringify(visible[0]));
-    return visible[0];
-  }
-
-  window.localStorage.removeItem(CURRENT_WORKSPACE_KEY);
-  return null;
+function normalizeWorkspace(item = {}) {
+  return {
+    workspaceId: item.workspace_id || item.workspaceId || '',
+    name: item.name || '이름 없는 워크스페이스',
+    role: item.role || 'MEMBER'
+  };
 }
 
-export function getVisibleWorkspaces() {
-  const session = getCurrentSession();
-  if (!session?.user?.userId) return [];
-  const userId = session.user.userId;
-  ensurePersonalWorkspace(userId);
-  return getAllWorkspaces()
-    .filter((workspace) => workspace.memberUserIds.includes(userId))
-    .map((workspace) => ({
-      ...workspace,
-      role: workspace.ownerUserId === userId ? 'OWNER' : 'MEMBER'
-    }));
+export async function getVisibleWorkspaces() {
+  const payload = await request('/workspaces', { headers: getHeaders() });
+  const items = Array.isArray(payload?.workspaces) ? payload.workspaces : [];
+  return items.map(normalizeWorkspace);
 }
 
-export function createWorkspace({ name, description }) {
-  const session = getCurrentSession();
-  const ownerUserId = session?.user?.userId;
-
-  if (!ownerUserId) {
-    throw new Error('로그인이 필요합니다.');
-  }
+export async function createWorkspace({ name }) {
   if (!name?.trim()) {
     throw new Error('워크스페이스 이름을 입력해주세요.');
   }
 
-  const workspace = normalizeWorkspace({
-    workspaceId: `ws_${Date.now()}`,
-    name: name.trim(),
-    role: 'OWNER',
-    memberCount: 1,
-    description: description?.trim() || '새로 생성된 워크스페이스입니다.',
-    ownerUserId,
-    memberUserIds: [ownerUserId]
+  const payload = await request('/workspaces', {
+    method: 'POST',
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ name: name.trim() })
   });
 
-  const workspaces = [workspace, ...getAllWorkspaces()];
-  saveWorkspaces(workspaces);
-  setCurrentWorkspace(workspace.workspaceId);
-  return workspace;
+  return normalizeWorkspace({
+    workspace_id: payload?.workspace_id,
+    name: payload?.name,
+    role: 'OWNER'
+  });
 }
 
-export function inviteUserToWorkspace(workspaceId, invitedUserId) {
-  const session = getCurrentSession();
-  const currentUserId = session?.user?.userId;
-
-  if (!currentUserId) {
-    throw new Error('로그인이 필요합니다.');
-  }
-  if (!invitedUserId?.trim()) {
-    throw new Error('초대할 유저 ID를 입력해주세요.');
+export async function inviteUserToWorkspace(workspaceId, email) {
+  if (!email?.trim()) {
+    throw new Error('초대할 이메일을 입력해주세요.');
   }
 
-  const workspaces = getAllWorkspaces().map((workspace) => {
-    if (workspace.workspaceId !== workspaceId) return workspace;
-    if (workspace.ownerUserId !== currentUserId) {
-      throw new Error('워크스페이스 소유자만 초대할 수 있습니다.');
-    }
-    if (workspace.memberUserIds.includes(invitedUserId.trim())) {
-      return workspace;
-    }
-    return normalizeWorkspace({
-      ...workspace,
-      memberUserIds: [...workspace.memberUserIds, invitedUserId.trim()],
-      memberCount: workspace.memberUserIds.length + 1
-    });
+  await request(`/workspaces/${encodeURIComponent(workspaceId)}/invite`, {
+    method: 'POST',
+    headers: getHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ email: email.trim() })
+  });
+}
+
+export async function deleteWorkspace(workspaceId) {
+  await request(`/workspaces/${encodeURIComponent(workspaceId)}`, {
+    method: 'DELETE',
+    headers: getHeaders()
   });
 
-  saveWorkspaces(workspaces);
+  const current = getCurrentWorkspace();
+  if (current?.workspaceId === workspaceId) {
+    window.localStorage.removeItem(CURRENT_WORKSPACE_KEY);
+  }
 }
 
-export function deleteWorkspace(workspaceId) {
-  const session = getCurrentSession();
-  const currentUserId = session?.user?.userId;
-
-  if (!currentUserId) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  const target = getAllWorkspaces().find((workspace) => workspace.workspaceId === workspaceId);
-  if (!target) {
-    throw new Error('워크스페이스를 찾을 수 없습니다.');
-  }
-  if (target.ownerUserId !== currentUserId) {
-    throw new Error('워크스페이스 소유자만 삭제할 수 있습니다.');
-  }
-
-  const workspaces = getAllWorkspaces().filter((workspace) => workspace.workspaceId !== workspaceId);
-  saveWorkspaces(workspaces);
-  removeMeetingsByWorkspace(workspaceId);
-  syncCurrentWorkspace(currentUserId);
-}
-
-export function leaveWorkspace(workspaceId) {
-  const session = getCurrentSession();
-  const currentUserId = session?.user?.userId;
-
-  if (!currentUserId) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  const target = getAllWorkspaces().find((workspace) => workspace.workspaceId === workspaceId);
-  if (!target) {
-    throw new Error('워크스페이스를 찾을 수 없습니다.');
-  }
-  if (target.ownerUserId === currentUserId) {
-    throw new Error('소유자는 워크스페이스를 나갈 수 없습니다. 삭제를 사용해주세요.');
-  }
-
-  const workspaces = getAllWorkspaces().map((workspace) => {
-    if (workspace.workspaceId !== workspaceId) return workspace;
-    return normalizeWorkspace({
-      ...workspace,
-      memberUserIds: workspace.memberUserIds.filter((memberUserId) => memberUserId !== currentUserId),
-      memberCount: workspace.memberUserIds.filter((memberUserId) => memberUserId !== currentUserId).length
-    });
+export async function leaveWorkspace(workspaceId) {
+  await request(`/workspaces/${encodeURIComponent(workspaceId)}/leave`, {
+    method: 'POST',
+    headers: getHeaders()
   });
 
-  saveWorkspaces(workspaces);
-  syncCurrentWorkspace(currentUserId);
+  const current = getCurrentWorkspace();
+  if (current?.workspaceId === workspaceId) {
+    window.localStorage.removeItem(CURRENT_WORKSPACE_KEY);
+  }
 }
 
-export function setCurrentWorkspace(workspaceId) {
-  const workspace = getVisibleWorkspaces().find((item) => item.workspaceId === workspaceId);
-  if (!workspace) {
-    throw new Error('접근 가능한 워크스페이스를 찾을 수 없습니다.');
+export function setCurrentWorkspace(workspace) {
+  if (!workspace?.workspaceId) {
+    throw new Error('선택할 워크스페이스 정보가 없습니다.');
   }
   window.localStorage.setItem(CURRENT_WORKSPACE_KEY, JSON.stringify(workspace));
   return workspace;
 }
 
 export function getCurrentWorkspace() {
-  const session = getCurrentSession();
-  if (!session?.user?.userId) {
+  if (!getCurrentSession()?.user) {
     return null;
   }
-  return syncCurrentWorkspace(session.user.userId);
+  const raw = window.localStorage.getItem(CURRENT_WORKSPACE_KEY);
+  return raw ? JSON.parse(raw) : null;
 }
 
 export function requireWorkspace() {
   const workspace = getCurrentWorkspace();
-  const visible = getVisibleWorkspaces();
-  if (!workspace || !visible.some((item) => item.workspaceId === workspace.workspaceId)) {
+  if (!workspace) {
     window.location.href = './workspaces.html';
     throw new Error('워크스페이스 선택이 필요합니다.');
   }

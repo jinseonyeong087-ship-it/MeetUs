@@ -36,7 +36,7 @@ end
 
 S3[(Amazon S3)]
 TRANS[AWS Transcribe]
-OPENAI[OpenAI API]
+BEDROCK[Amazon Bedrock (Claude 3) API]
 
 end
 
@@ -73,7 +73,7 @@ CORE_GREEN --> S3
 CORE_GREEN --> AI
 
 AI --> TRANS
-AI --> OPENAI
+AI --> BEDROCK
 AI --> RDS
 AI --> S3
 
@@ -92,4 +92,4 @@ ECR --> AI
 %% =======================
 
 AI --> NAT
-NAT --> OPENAI
+NAT --> BEDROCK

@@ -59,10 +59,10 @@ AI 회의 요약 및 개인별 To-Do 자동 추출 결과를 사용자에게 직
 6. 완료 처리 후 상세 화면으로 이동한다.
 
 #### API 연동 정의
-- `POST /meetings`
-- `POST /meetings/{meetingId}/audio/presigned-url`
-- `POST /meetings/{meetingId}/audio:complete`
-- `POST /meetings/{meetingId}/processing:run`
+- `POST /workspaces/{workspaceId}/meetings`
+- `POST /meetings/{meetingId}/upload-url`
+- `POST /meetings/{meetingId}/upload-complete`
+- `POST /meetings/{meetingId}/process`
 - `GET /meetings/{meetingId}`
 
 ---
@@ -109,7 +109,7 @@ AI 회의 요약 및 개인별 To-Do 자동 추출 결과를 사용자에게 직
 5. 처리 중 회의는 새로고침 또는 polling 반영 결과를 확인한다.
 
 #### API 연동 정의
-- `GET /meetings?query=&status=&from=&to=&sort=&page=&size=`
+- `GET /meetings?workspaceId=&query=&status=&fromDate=&toDate=&sort=&page=&size=`
 - `GET /meetings/{meetingId}`
 
 ---
@@ -158,9 +158,8 @@ AI 회의 요약 및 개인별 To-Do 자동 추출 결과를 사용자에게 직
 
 #### API 연동 정의
 - `GET /meetings/{meetingId}`
-- `GET /meetings/{meetingId}/result`
-- `GET /meetings/{meetingId}/todos`
-- `POST /meetings/{meetingId}/processing:run`
+- `GET /todos?meetingId={meetingId}`
+- `POST /meetings/{meetingId}/retry`
 
 ### 예외 처리 UI
 - 처리 실패 안내 메시지
@@ -198,14 +197,13 @@ AI 회의 요약 및 개인별 To-Do 자동 추출 결과를 사용자에게 직
 ### 3.4 API 연동 공통 기준
 | 화면 | 주요 API | 목적 |
 |---|---|---|
-| 회의 업로드 화면 | `POST /meetings` | 회의 메타데이터 생성 |
-| 회의 업로드 화면 | `POST /meetings/{meetingId}/audio/presigned-url` | S3 업로드 URL 발급 |
-| 회의 업로드 화면 | `POST /meetings/{meetingId}/audio:complete` | 업로드 완료 처리 |
-| 회의 업로드 화면 | `POST /meetings/{meetingId}/processing:run` | AI 처리 시작 |
+| 회의 업로드 화면 | `POST /workspaces/{workspaceId}/meetings` | 회의 메타데이터 생성 |
+| 회의 업로드 화면 | `POST /meetings/{meetingId}/upload-url` | S3 업로드 URL 발급 |
+| 회의 업로드 화면 | `POST /meetings/{meetingId}/upload-complete` | 업로드 완료 처리 |
+| 회의 업로드 화면 | `POST /meetings/{meetingId}/process` | AI 처리 시작 |
 | 회의 목록(Archive) 화면 | `GET /meetings` | 목록 조회, 검색, 필터, 정렬 |
 | 회의 상세 화면 | `GET /meetings/{meetingId}` | 상세 상태 및 기본 정보 조회 |
-| 회의 상세 화면 | `GET /meetings/{meetingId}/result` | transcript, 요약, 결정사항 조회 |
-| 회의 상세 화면 | `GET /meetings/{meetingId}/todos` | 개인별 To-Do 조회 |
+| 회의 상세 화면 | `GET /todos?meetingId={meetingId}` | 개인별 To-Do 조회 |
 
 ### 3.5 UX 고려 사항
 - 업로드 진행 상태는 퍼센트와 단계 메시지를 함께 표시한다.

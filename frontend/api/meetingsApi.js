@@ -94,7 +94,18 @@ function sortMeetings(meetings, sort = 'date-desc') {
 }
 
 export async function getMeetings(filters = {}) {
-  const data = await request('/meetings', { headers: getHeaders() });
+  const params = new URLSearchParams();
+  if (filters.workspaceId) params.set('workspaceId', filters.workspaceId);
+  if ((filters.query || '').trim()) params.set('query', filters.query.trim());
+  if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
+  if (filters.fromDate) params.set('fromDate', filters.fromDate);
+  if (filters.toDate) params.set('toDate', filters.toDate);
+  if (filters.sort) params.set('sort', filters.sort);
+  if (typeof filters.page === 'number') params.set('page', String(filters.page));
+  if (typeof filters.size === 'number') params.set('size', String(filters.size));
+
+  const queryString = params.toString();
+  const data = await request(`/meetings${queryString ? `?${queryString}` : ''}`, { headers: getHeaders() });
   const items = Array.isArray(data?.meetings) ? data.meetings : [];
   const meetings = items.map((item) => normalizeMeeting(item));
 
@@ -130,7 +141,11 @@ export async function getMeetingById(meetingId) {
 }
 
 export async function createMockMeeting({ title, date, participants, fileName, workspaceId }) {
-  const payload = await request('/meetings', {
+  if (!workspaceId) {
+    throw new Error('워크스페이스를 먼저 선택해주세요.');
+  }
+
+  const payload = await request(`/workspaces/${encodeURIComponent(workspaceId)}/meetings`, {
     method: 'POST',
     headers: getHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ title: title.trim() })
@@ -211,7 +226,7 @@ export async function startMockUpload(meetingId, { file } = {}) {
 }
 
 export async function retryMeetingProcessing(meetingId) {
-  await request(`/meetings/${encodeURIComponent(meetingId)}/process`, {
+  await request(`/meetings/${encodeURIComponent(meetingId)}/retry`, {
     method: 'POST',
     headers: getHeaders()
   });
@@ -245,7 +260,7 @@ export function getDisplayStatusMeta(status) {
 }
 
 export function removeMeetingsByWorkspace() {
-  // TA api-spec에는 워크스페이스 삭제 API가 없어서 프론트에서 별도 처리하지 않는다.
+  // 서버 데이터는 백엔드 API를 통해 관리하므로 프론트에서 별도 삭제 처리를 하지 않는다.
 }
 
 export function resetMockMeetings() {

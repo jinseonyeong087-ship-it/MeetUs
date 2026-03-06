@@ -1,126 +1,174 @@
-# API 연동 문서 (AA)
+# API 연동 문서 (AA, TA 기준 동기화)
 
 ## 1. 개요
-Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, AI 처리 상태를 폴링 또는 SSE로 반영한다.
+Frontend는 Core API를 통해 회의 생성/조회/상세 데이터를 받고, 비동기 AI 처리 상태를 polling으로 반영한다.
 
 ---
 
 ## 2. API 목록
 
-## 2.1 회의 생성 (업로드 시작)
-- **POST** `/meetings`
-- 설명: 워크스페이스 소유 회의 메타데이터 생성
+## 2.1 로그인
+- **POST** `/auth/login`
 
 ### Request (예시)
 ```json
 {
-  "workspaceId": "ws_123",
-  "title": "주간 스프린트 회의",
-  "startedAt": "2026-02-27T03:00:00Z"
+  "email": "user@test.com",
+  "password": "password"
 }
 ```
 
 ### Response (예시)
 ```json
 {
-  "meetingId": "mtg_123",
-  "status": "CREATED"
+  "access_token": "jwt-token"
 }
 ```
 
 ---
 
-## 2.2 업로드 URL 발급
-- **POST** `/meetings/{meetingId}/audio/presigned-url`
-- 설명: `m4a`, 30MB 이하 파일 업로드용 Presigned URL 발급
-
-### Request (예시)
-```json
-{
-  "fileName": "meeting-2026-02-27.m4a",
-  "contentType": "audio/mp4",
-  "fileSize": 26214400
-}
-```
+## 2.2 워크스페이스 목록 조회
+- **GET** `/workspaces`
 
 ### Response (예시)
 ```json
 {
-  "uploadUrl": "https://example-presigned-url",
-  "objectKey": "workspaces/ws_123/meetings/mtg_123/audio/source.m4a",
-  "expiresIn": 900
-}
-```
-
----
-
-## 2.3 업로드 완료 처리
-- **POST** `/meetings/{meetingId}/audio:complete`
-
-### Response (예시)
-```json
-{
-  "meetingId": "mtg_123",
-  "status": "UPLOADED"
-}
-```
-
----
-
-## 2.4 회의 목록 조회 (Archive)
-- **GET** `/meetings?query=&status=&from=&to=&sort=createdAt,desc&page=0&size=20`
-
-### Response (예시)
-```json
-{
-  "content": [
+  "workspaces": [
     {
-      "meetingId": "mtg_123",
-      "title": "주간 스프린트 회의",
-      "status": "PROCESSING",
-      "createdAt": "2026-02-27T03:00:00Z"
+      "workspace_id": "uuid",
+      "name": "AI Project Team",
+      "role": "OWNER"
     }
-  ],
-  "page": 0,
-  "size": 20,
-  "totalElements": 1
-}
-```
-
----
-
-## 2.5 회의 상세 조회
-- **GET** `/meetings/{meetingId}`
-
-### Response (예시)
-```json
-{
-  "meetingId": "mtg_123",
-  "title": "주간 스프린트 회의",
-  "status": "COMPLETED",
-  "transcript": "...",
-  "summary": "전체 요약 5~7줄",
-  "decisions": [
-    "3월 2주차 배포 일정 확정"
   ]
 }
 ```
 
 ---
 
-## 2.6 개인별 To-Do 조회
-- **GET** `/meetings/{meetingId}/todos`
+## 2.3 회의 생성 (업로드 시작)
+- **POST** `/workspaces/{workspaceId}/meetings`
+
+### Request (예시)
+```json
+{
+  "title": "주간 스프린트 회의"
+}
+```
 
 ### Response (예시)
 ```json
-[
-  {
-    "assignee": "홍길동",
-    "task": "아카이브 필터 UI 구현",
-    "due_date": "2026-03-02"
-  }
-]
+{
+  "meeting_id": "uuid",
+  "workspace_id": "uuid",
+  "status": "CREATED"
+}
 ```
+
+---
+
+## 2.4 업로드 URL 발급
+- **POST** `/meetings/{meetingId}/upload-url`
+
+### Response (예시)
+```json
+{
+  "upload_url": "https://example-presigned-url",
+  "audio_key": "meetings/{meetingId}/audio.m4a"
+}
+```
+
+---
+
+## 2.5 업로드 완료 처리
+- **POST** `/meetings/{meetingId}/upload-complete`
+
+### Request (예시)
+```json
+{
+  "audio_s3_key": "meetings/uuid/audio.m4a"
+}
+```
+
+### Response (예시)
+```json
+{
+  "status": "UPLOADED"
+}
+```
+
+---
+
+## 2.6 AI 처리 시작
+- **POST** `/meetings/{meetingId}/process`
+
+### Response (예시)
+```json
+{
+  "status": "PROCESSING"
+}
+```
+
+---
+
+## 2.7 회의 목록 조회 (Archive)
+- **GET** `/meetings?workspaceId=&query=&status=&fromDate=&toDate=&sort=&page=&size=`
+
+### Response (예시)
+```json
+{
+  "meetings": [
+    {
+      "meeting_id": "uuid",
+      "title": "주간 스프린트 회의",
+      "status": "PROCESSING",
+      "created_at": "2026-02-27"
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+## 2.8 회의 상세 조회
+- **GET** `/meetings/{meetingId}`
+
+### Response (예시)
+```json
+{
+  "meeting": {
+    "meeting_id": "uuid",
+    "title": "주간 스프린트 회의",
+    "status": "COMPLETED"
+  },
+  "transcript": "...",
+  "summary": "전체 요약 5~7줄",
+  "decisions": "결정사항...",
+  "todos": [
+    {
+      "todo_id": "uuid",
+      "task": "아카이브 필터 UI 구현",
+      "assignee": "홍길동",
+      "status": "PENDING"
+    }
+  ]
+}
+```
+
+---
+
+## 2.9 To-Do 목록 조회
+- **GET** `/todos?workspaceId=&meetingId=&assignee=&status=`
+
+---
+
+## 2.10 To-Do 상태 변경
+- **PATCH** `/todos/{todoId}`
+
+---
+
+## 2.11 회의 재처리
+- **POST** `/meetings/{meetingId}/retry`
 
 ---
 

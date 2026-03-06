@@ -64,7 +64,7 @@ flowchart LR
     A[ai-minutes-ai-service]
     P[(postgres:16-alpine)]
     M[(minio/minio)]
-    X[External STT/LLM API<br/>optional]
+    X[Amazon Bedrock or On-Prem LLM<br/>optional]
 
     U --> F
     F --> C
@@ -95,7 +95,7 @@ flowchart LR
 ## 주의사항
 - 현재 repo에서 실제 Dockerfile로 확인되는 것은 프론트엔드뿐이다.
 - `ai-minutes-core-api`, `ai-minutes-ai-service`는 문서상 필수 이미지이며, 실제 온프렘 구축 전 해당 Dockerfile이 추가로 필요하다.
-- AI 처리 대상이 외부 STT/LLM API를 계속 사용한다면 완전 폐쇄형 온프렘은 아니다. 완전 온프렘이 목표라면 STT/LLM까지 자체 호스팅 이미지로 별도 치환해야 한다.
+- AI 처리 대상이 Amazon Bedrock(클라우드) 기반이면 완전 폐쇄형 온프렘은 아니다. 완전 온프렘이 목표라면 STT/LLM까지 자체 호스팅 이미지로 별도 치환해야 한다.
 
 
 ![alt text](/img/image2.png)

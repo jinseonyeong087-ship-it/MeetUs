@@ -10,20 +10,20 @@
 5. 사용자가 회의 제목, 일시를 입력하고 `m4a` 파일을 선택한다.
 
 ### 1.2 회의 생성 및 업로드 흐름
-1. Frontend가 `POST /meetings`로 회의 메타데이터를 생성한다.
+1. Frontend가 `POST /workspaces/{workspaceId}/meetings`로 회의 메타데이터를 생성한다.
 2. Core API가 회의 정보를 RDS에 저장하고 상태를 `CREATED`로 반환한다.
-3. Frontend가 `POST /meetings/{meetingId}/audio/presigned-url`을 호출한다.
-4. Core API가 S3 업로드용 Presigned URL과 `objectKey`를 반환한다.
+3. Frontend가 `POST /meetings/{meetingId}/upload-url`을 호출한다.
+4. Core API가 S3 업로드용 Presigned URL과 `audio_key`를 반환한다.
 5. Frontend가 브라우저에서 Presigned URL로 `m4a` 파일을 직접 업로드한다.
-6. 업로드 성공 후 Frontend가 `POST /meetings/{meetingId}/audio:complete`를 호출한다.
+6. 업로드 성공 후 Frontend가 `POST /meetings/{meetingId}/upload-complete`를 호출한다.
 7. Core API가 회의 상태를 `UPLOADED`로 변경한다.
-8. Frontend가 `POST /meetings/{meetingId}/processing:run`을 호출하거나, 업로드 완료 이벤트 기준 자동 처리 시작 상태를 조회한다.
+8. Frontend가 `POST /meetings/{meetingId}/process`을 호출하거나, 업로드 완료 이벤트 기준 자동 처리 시작 상태를 조회한다.
 
 ### 1.3 AI 처리 및 결과 확인 흐름
 1. Core API가 AI 처리 요청을 SQS에 적재한다.
 2. AI Service가 SQS 메시지를 consume하고 S3의 원본 `m4a` 파일을 조회한다.
 3. AI Service가 AWS Transcribe로 transcript를 생성한다.
-4. AI Service가 transcript를 기반으로 OpenAI에 요약, 결정사항, 개인별 To-Do 생성을 요청한다.
+4. AI Service가 transcript를 기반으로 Amazon Bedrock (Claude 3)에 요약, 결정사항, 개인별 To-Do 생성을 요청한다.
 5. AI Service가 transcript, summary, decisions, todos를 RDS에 저장한다.
 6. 저장 완료 후 회의 상태를 `COMPLETED`로 변경한다.
 7. Frontend는 상세 또는 Archive에서 상태 polling으로 결과를 갱신한다.
@@ -110,7 +110,7 @@
 ### 4.3 AI 처리 예외
 - SQS 적재 실패: 처리 시작 실패 메시지와 `다시 시도` 버튼 표시
 - Transcribe 실패: 상태 `FAILED` 표시, 재처리 버튼 제공
-- OpenAI 응답 실패: 상태 `FAILED` 표시, 재처리 버튼 제공
+- Amazon Bedrock (Claude 3) 응답 실패: 상태 `FAILED` 표시, 재처리 버튼 제공
 - DB 저장 실패: 상태 `FAILED` 표시, 결과 미노출
 - 자동 재시도 초과: 최종 실패 안내와 운영자 문의 또는 재처리 유도
 
@@ -137,7 +137,7 @@
 - Core API: Python API
 - Storage: AWS S3
 - Queue: AWS SQS
-- AI: AWS Transcribe + OpenAI
+- AI: AWS Transcribe + Amazon Bedrock (Claude 3)
 - DB: RDS
 
 ### 5.2 사용자 행동 ↔ 시스템 처리 연결
@@ -160,7 +160,7 @@
 6. Core API가 SQS에 처리 작업 메시지를 발행한다.
 7. AI Service가 SQS 메시지를 수신하고 회의 상태를 `PROCESSING`으로 변경한다.
 8. AI Service가 S3 원본 파일을 읽어 AWS Transcribe에 전사를 요청한다.
-9. AI Service가 생성된 transcript를 기반으로 OpenAI에 요약/결정사항/개인별 To-Do 생성을 요청한다.
+9. AI Service가 생성된 transcript를 기반으로 Amazon Bedrock (Claude 3)에 요약/결정사항/개인별 To-Do 생성을 요청한다.
 10. AI Service가 transcript, summary, decisions, todos를 RDS에 저장한다.
 11. 저장이 완료되면 회의 상태를 `COMPLETED`로 변경한다.
 12. 실패 시 재시도 정책을 적용하고 최종 실패 시 `FAILED`로 종료한다.

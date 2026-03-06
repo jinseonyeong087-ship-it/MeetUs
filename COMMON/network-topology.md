@@ -3,7 +3,7 @@
 ## 환경 구분
 - Public Subnet: ALB 및 Production Listener 진입점
 - Private Subnet: ECS 서비스, DB
-- 외부 연동: STT/LLM API
+- 외부 연동: AWS Transcribe, Amazon Bedrock (Claude 3)
 
 ## Mermaid Diagram
 ```mermaid
@@ -24,7 +24,7 @@ flowchart TB
     APIG --> OS
     AI --> DB
     AI --> OS
-    AI --> EXT[외부 STT/LLM API]
+    AI --> EXT[AWS Transcribe + Amazon Bedrock]
     FE --> CWL[CloudWatch Logs]
     API --> CWL
     APIG --> CWL

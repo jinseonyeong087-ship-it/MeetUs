@@ -1,11 +1,11 @@
 import sys
 import os
 
-# 모듈 경로 인식 버그 방지
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# 모듈 경로 인식 버그 방지 (ai-pipeline 폴더를 기준으로 환경 설정)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.llm_processor import LLMProcessor
-from network.api_client import APIClient
+from src.core.llm_processor import LLMProcessor
+from src.network.api_client import APIClient
 
 class MockSTTProcessor:
     """AWS 비용을 방지하기 위해 STT 로직을 텍스트 뱉는 가짜(Mock) 모듈로 교체합니다."""

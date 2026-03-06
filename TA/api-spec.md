@@ -1,3 +1,4 @@
+## 🔐 Authentication
 ### 1️⃣ 로그인
 
 > **POST** /auth/login
@@ -39,10 +40,92 @@
 ```
 ---
 
-## 🎤 회의 업로드
-### 3️⃣ 회의 생성
+### 🏢 Workspace API
 
-> **POST** /meetings
+워크스페이스는 협업의 기본 단위이며 회의와 To-Do 자원을 관리한다.
+
+---
+
+### 3️⃣ 워크스페이스 생성
+
+> **POST** /workspaces
+
+### Request
+```json
+{
+  "name": "AI Project Team"
+}
+```
+### Response
+```json
+{
+  "workspace_id": "uuid",
+  "name": "AI Project Team"
+}
+```
+
+### 4️⃣ 워크스페이스 목록 조회
+
+> **GET** /workspaces
+
+### Response
+```json
+{
+  "workspaces": [
+    {
+      "workspace_id": "uuid",
+      "name": "AI Project Team",
+      "role": "OWNER"
+    }
+  ]
+}
+```
+
+### 5️⃣ 워크스페이스 초대
+
+> **POST** /workspaces/{workspaceId}/invite
+
+### Request
+```json
+{
+  "email": "member@test.com"
+}
+```
+
+### Response
+```json
+{
+  "status": "invited"
+}
+```
+
+### 6️⃣ 워크스페이스 나가기
+
+> **POST** /workspaces/{workspaceId}/leave
+
+### Response
+```json
+{
+  "status": "left"
+}
+```
+
+### 7️⃣ 워크스페이스 삭제
+
+> **DELETE** /workspaces/{workspaceId}
+
+### Response
+```json
+{
+  "status": "deleted"
+}
+```
+---
+## 🎤 Meeting Upload
+
+### 8️⃣ 회의 생성
+
+> **POST** /workspaces/{workspaceId}/meetings
 
 ### Request
 ```json
@@ -50,15 +133,17 @@
   "title": "주간 회의"
 }
 ```
+
 ### Response
 ```json
 {
   "meeting_id": "uuid",
+  "workspace_id": "uuid",
   "status": "CREATED"
 }
 ```
 
-### 4️⃣ S3 업로드 URL 발급
+### 9️⃣ S3 업로드 URL 발급
 
 > **POST** /meetings/{meetingId}/upload-url
 
@@ -70,7 +155,7 @@
 }
 ```
 
-### 5️⃣ 업로드 완료
+### 🔟 업로드 완료
 
 > **POST** /meetings/{meetingId}/upload-complete
 
@@ -88,15 +173,17 @@
 }
 ```
 
-## 🤖 AI 처리 시작
+## 🤖 AI Processing
 
-### 6️⃣ AI 작업 요청 (SQS)
+### 1️⃣1️⃣ AI 작업 요청 (SQS)
 
 > **POST** /meetings/{meetingId}/process
 
 **Core API 내부 동작**
 
-> SQS sendMessage
+```
+SQS sendMessage
+```
 
 ### Message Example (SQS)
 ```json
@@ -113,10 +200,28 @@
 }
 ```
 
-## 📚 회의 조회
-### 7️⃣ 회의 목록 조회
+## 📚 Meeting Query
+### 1️⃣2️⃣ 회의 목록 조회
 
 > **GET** /meetings
+
+**Query Parameters**
+| Parameter   | Description |
+| ----------- | ----------- |
+| workspaceId | 워크스페이스      |
+| query       | 제목 검색       |
+| status      | 상태 필터       |
+| fromDate    | 시작 날짜       |
+| toDate      | 종료 날짜       |
+| sort        | 정렬          |
+| page        | 페이지         |
+| size        | 페이지 크기      |
+
+**Example**
+
+```
+GET /meetings?workspaceId=123&status=COMPLETED&page=0&size=10
+```
 
 ### Response
 ```json
@@ -128,11 +233,12 @@
       "status": "COMPLETED",
       "created_at": "2026-03-05"
     }
-  ]
+  ],
+  "total": 1
 }
 ```
 
-### 8️⃣ 회의 상세 조회
+### 1️⃣3️⃣ 회의 상세 조회
 
 > **GET** /meetings/{meetingId}
 
@@ -158,14 +264,79 @@
 }
 ```
 
-## 🔁 AI 결과 수신 (Webhook)
-### 9️⃣ AI 결과 전달 API
+## 🔁 Meeting Retry
+### 1️⃣4️⃣ 회의 재처리
+
+> **POST** /meetings/{meetingId}/retry
+
+FAILED 상태의 회의를 다시 AI 처리한다.
+
+### Response
+```json
+{
+  "status": "PROCESSING"
+}
+```
+
+## ✅ Todo API
+### 1️⃣5️⃣ To-Do 목록 조회
+
+> **GET** /todos
+
+**Query Parameters**
+
+| Parameter   | Description |
+| ----------- | ----------- |
+| workspaceId | 워크스페이스      |
+| meetingId   | 회의          |
+| assignee    | 담당자         |
+| status      | 상태          |
+
+### Response
+
+```json
+{
+  "todos": [
+    {
+      "todo_id": "uuid",
+      "task": "보고서 작성",
+      "assignee": "홍길동",
+      "status": "PENDING"
+    }
+  ]
+}
+```
+
+### 1️⃣6️⃣ To-Do 상태 변경
+
+> **PATCH** /todos/{todoId}
+
+### Request
+
+```json
+{
+  "status": "DONE"
+}
+```
+
+### Response
+
+```json
+{
+  "todo_id": "uuid",
+  "status": "DONE"
+}
+```
+
+## 🔁 AI Result Webhook
+### 1️⃣7️⃣ AI 결과 전달 API
 
 > **POST** /internal/ai/result
 
-AI Worker가 호출
+AI Worker가 호출하는 내부 API
 
 ### Request
+
 ```json
 {
   "meeting_id": "uuid",
@@ -181,8 +352,7 @@ AI Worker가 호출
 }
 ```
 
-Core API 처리
-
+### Core API 처리
 ```
 DB 저장
 meeting.status = COMPLETED
@@ -197,7 +367,7 @@ meeting.status = COMPLETED
 ---
 ### 🧠 전체 흐름 (아키텍처 기준)
 
-1. Frontend → POST /meetings
+1. Frontend → POST /workspaces/{id}/meetings
 2. Frontend → POST /meetings/{id}/upload-url
 3. Frontend → S3 업로드
 4. Frontend → POST /meetings/{id}/upload-complete
@@ -228,14 +398,20 @@ meeting.status = COMPLETED
 
 ## 📊 UI → API 매핑
 
-| UI 화면    | API                                 |
-| -------- | ----------------------------------- |
-| 회원가입     | POST /auth/signup                   |
-| 로그인      | POST /auth/login                    |
-| 회의 생성    | POST /meetings                      |
-| 업로드 URL  | POST /meetings/{id}/upload-url      |
-| 업로드 완료   | POST /meetings/{id}/upload-complete |
-| AI 처리    | POST /meetings/{id}/process         |
-| 회의 목록    | GET /meetings                       |
-| 회의 상세    | GET /meetings/{id}                  |
-| AI 결과 저장 | POST /internal/ai/result            |
+| UI 화면       | API                                 |
+| ----------- | ----------------------------------- |
+| 회원가입        | POST /auth/signup                   |
+| 로그인         | POST /auth/login                    |
+| 워크스페이스 생성   | POST /workspaces                    |
+| 워크스페이스 목록   | GET /workspaces                     |
+| 회의 생성       | POST /workspaces/{id}/meetings      |
+| 업로드 URL     | POST /meetings/{id}/upload-url      |
+| 업로드 완료      | POST /meetings/{id}/upload-complete |
+| AI 처리       | POST /meetings/{id}/process         |
+| 회의 목록       | GET /meetings                       |
+| 회의 상세       | GET /meetings/{id}                  |
+| 회의 재처리      | POST /meetings/{id}/retry           |
+| To-Do 조회    | GET /todos                          |
+| To-Do 상태 변경 | PATCH /todos/{id}                   |
+| AI 결과 저장    | POST /internal/ai/result            |
+

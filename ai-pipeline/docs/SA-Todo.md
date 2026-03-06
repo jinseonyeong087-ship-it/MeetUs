@@ -1,33 +1,33 @@
 # 🚀 SA (AI 파이프라인) 작업 WBS 및 To-Do List
+
 **담당자:** 주환 (SA)
-**목표:** AWS SQS 메시지를 수신하여 음성을 텍스트로 변환(STT)하고, LLM을 통해 요약 및 To-Do를 추출하여 Core API(DB)에 전달한다.
+**목표:** AWS 내부망(All AWS) 아키텍처를 기반으로 SQS 메시지를 수신하여 음성을 텍스트로 변환(Transcribe)하고, Bedrock(Claude 3)을 통해 요약 및 To-Do를 추출하여 Core API 서버에 전달한다.
 
-## 🏃‍♂️ Phase 1: 개발 환경 및 클라우드 연동 세팅
-- [v] 파이썬 가상환경 세팅 및 필수 라이브러리 설치 (`boto3`, `requests` 등)
-- [v] AWS IAM 권한 설정 (S3 읽기, SQS 읽기/삭제, Transcribe 접근 권한)
-- [v] 환경 변수(`.env`) 세팅 (AWS Access Key 등 - **절대 GitHub에 올리지 말 것!**)
+## 🏃‍♂️ Phase 1: 개발 환경 및 클라우드 연동 세팅 (완료)
+- [v] 파이썬 가상환경 세팅 및 필수 라이브러리 설치 (`boto3`, `requests`, `python-dotenv`)
+- [v] 보안 및 의존성 최적화: 사용하지 않는 `openai` 라이브러리 완전 제거
+- [v] AWS IAM 권한 설정 (S3, SQS, Transcribe, Bedrock 접근 권한 4대장 확인 완료)
+- [v] `src/config.py`: 환경 변수(`.env`) 중앙 통제 모듈 구성 완료
 
-## 📡 Phase 2: SQS 통신 및 데이터베이스 연동
-- [ ] AWS SQS 폴링(Polling) 리스너 구현 (새 메시지가 올 때까지 대기하고 낚아채기)
-- [ ] SQS 메시지 파싱 및 검증 (수신된 JSON 데이터 구조 확인, 30MB/m4a 제약 체크)
-- [ ] Core API / DB 통신을 위한 HTTP Request 모듈 구현
-  - *Rule:* 백엔드가 모두 파이썬이므로 모든 데이터 연동 필드 및 변수명은 `snake_case`로 통일. PK는 파이썬에서 `int` 타입 적용.
-- [ ] DB 상태 업데이트 로직 구현 1: 작업 시작 시 `[TRANSCRIBING]`으로 상태 변경
+## 📡 Phase 2: 코어 비즈니스 로직 (AI 엔진) 모듈화 (완료)
+- [v] `src/core/stt_processor.py`: AWS Transcribe API 연동 (작업 시작, Polling 및 텍스트 반환)
+- [v] `src/core/llm_processor.py`: Amazon Bedrock (Claude 3 Sonnet) 연동
+  - *Point:* 지정된 JSON 형태(`assignee`, `task`, `due_date`)로만 응답받도록 마스터 프롬프트 작성
+- [v] `src/network/api_client.py`: Core API Internal Webhook (`/internal/ai/result`) 통신 우체부 구현
 
-## 🎙️ Phase 3: AWS Transcribe (STT) 파이프라인
-- [ ] S3에 업로드된 오디오 파일 URI를 Transcribe Job으로 전송
-- [ ] Transcribe 작업 완료 상태 추적 로직 구현 (완료될 때까지 대기)
-- [ ] 변환 완료된 원본 텍스트(Transcript) 추출 및 정제
-- [ ] DB 상태 업데이트 로직 구현 2: STT 완료 후 `[SUMMARIZING]`으로 상태 변경
+## ⚙️ Phase 3: SQS 메인 컨트롤러 조립 (완료)
+- [v] `src/sqs_listener.py`: SQS 20초 롱 폴링(Long Polling) 대기 및 메시지 수신 로직 구축
+- [v] 전체 파이프라인(STT -> LLM -> API Client) 통합 조립 및 예외 처리(Try-Except)
+- [v] 단계별 상태 업데이트 규격 동기화 (`TRANSCRIBING` -> `PROCESSING` -> API 호출 처리)
+- [v] 에러 Throw를 통한 3회 재처리(Retry) 및 DLQ 연계 스펙 반영
 
-## 🧠 Phase 4: Amazon Bedrock (LLM) 기반 요약 및 To-Do 추출
-- [ ] 프롬프트 엔지니어링 1: 원본 텍스트 기반 핵심 회의록 요약(5~7줄 + 결정사항) 프롬프트 작성
-- [ ] 프롬프트 엔지니어링 2: 요약본 기반 담당자별 To-Do List 추출 프롬프트 작성
-  - *Point:* 반드시 정형화된 JSON 형태(`assignee`, `task`, `due_date`)로 응답받도록 LLM 파라미터(Response Format) 설정
-- [ ] DB 상태 업데이트 로직 구현 3: 요약/추출 중 `[TODO_EXTRACTING]`으로 상태 변경
+## � Phase 4: 구조 독립성 검증 및 로컬 테스트 (대기 중)
+- [v] `src/local_test.py`: 과금 및 외부 서버 의존성 없이 AI 로직만 검증할 모의(Mock) 리포팅 파일 껍데기 작성
+- [ ] 모의(Mock) 파이프라인 가동 및 Bedrock 텍스트 요약/지시어(JSON) 추출 품질 1차 검증
+- [ ] 예외(Exception) 핸들링 정상 동작 여부 모의 데이터로 디버깅
 
-## 🏁 Phase 5: 최종 결과 적재 및 에러 핸들링
-- [ ] 추출된 최종 데이터(요약 텍스트, To-Do JSON 리스트)를 Core API로 전달 (또는 DB 직접 적재)
-- [ ] DB 상태 업데이트 로직 구현 4: 모든 작업 정상 종료 시 `[COMPLETED]` 상태로 변경
-- [ ] 예외 처리(Try-Except) 및 에러 상태 로깅: 작업 실패 시 로깅 후 SQS 메시지 재처리 시도 (최대 3회)
-- [ ] 데드레터 큐(DLQ) 및 상태 변경: 3회 실패 시 DB 상태를 `[FAILED]`로 최종 업데이트 및 메시지 파기
+## 🚀 Phase 5: 인프라 배포 및 통합 연동 테스트 (예정)
+- [ ] (TA/AA 협의) 개발 서버용 실제 SQS 큐 URL 및 S3 버킷 권한 확보 (현재 Dummy URI 대체 상태)
+- [ ] AWS EKS(Fargate) 컨테이너화를 위한 `Dockerfile` 작성 및 도커 이미지(ECR) 빌드 준비
+- [ ] 통합 E2E 테스트: 프론트엔드 실제 음성 업로드 -> 코어 API -> SQS -> AI 엔진 -> DB 결과 렌더링까지 전체 핑(Ping) 테스트
+- [ ] 클라우드워치(CloudWatch) 로그 그룹 연동 및 배포 에러 모니터링 세팅

@@ -1,34 +1,26 @@
 # AI-Minutes
 
 ## 초안
-<img src="/AA/img/image.png">
+<img src="/AA/img/first.png">
 
 ## AA 산출물
 <img src="/AA/img/image3.png">
 
-## 필요 화면
-```
-Home
- ├ 회의 목록
- └ 새 회의 버튼
-
-Upload
- └ 파일 업로드
-
-Meeting Detail
- ├ 요약
- ├ To-Do
- └ 상태 표시
-
-Archive
- ├ 날짜 필터
- └ 회의 조회
-```
-
 ECS Frontend Service 배포 + ALB 연결
 <img src="/AA/img/front.png">
 
----
+## AWS root 계정에서 IAM user 권한
+<img src="/AA/img/IAMuser.png">
+
+## ECR Repository (Docker 이미지 저장소) 생성
+<img src="/AA/img/ECRrepository.png">
+
+## S3 Bucket (파일 업로드 저장소) 생성
+<img src="/AA/img/S3_Bucket.png">
+
+## ECS Cluster 생성
+<img src="/AA/img/ECS_cluster.png">
+
 
 # AA 작업 증적 (Frontend/Integration/Infra)
 

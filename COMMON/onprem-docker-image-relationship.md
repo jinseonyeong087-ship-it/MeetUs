@@ -98,5 +98,5 @@ flowchart LR
 - AI 처리 대상이 Amazon Bedrock(클라우드) 기반이면 완전 폐쇄형 온프렘은 아니다. 완전 온프렘이 목표라면 STT/LLM까지 자체 호스팅 이미지로 별도 치환해야 한다.
 
 
-![alt text](/img/image2.png)
+![alt text](/AA/img/image2.png)
 - 코덱스 에이전트에 만들어달라고 한 프롬프트

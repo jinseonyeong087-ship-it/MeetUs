@@ -1,10 +1,10 @@
 # AI-Minutes
 
 ## 초안
-<img src="/img/image.png">
+<img src="/AA/img/image.png">
 
 ## AA 산출물
-<img src="/img/image3.png">
+<img src="/AA/img/image3.png">
 
 ## 필요 화면
 ```
@@ -26,7 +26,7 @@ Archive
 ```
 
 ECS Frontend Service 배포 + ALB 연결
-<img src="/img/front.png">
+<img src="/AA/img/front.png">
 
 ---
 
@@ -82,9 +82,9 @@ ECS Frontend Service 배포 + ALB 연결
   - 문서 내 구버전 엔드포인트 제거 여부 점검
   - Mermaid 다이어그램 구문 오류 제거
 - 화면 캡처 증적:
-  - 초기 초안: `/img/image.png`
-  - AA 산출물 화면: `/img/image3.png`
-  - Front ECS/ALB 배포 화면: `/img/front.png`
+  - 초기 초안: `/AA/img/image.png`
+  - AA 산출물 화면: `/AA/img/image3.png`
+  - Front ECS/ALB 배포 화면: `/AA/img/front.png`
 
 ## 6) 증적 목록
 - 요구/분석/설계/구축 결과 문서:

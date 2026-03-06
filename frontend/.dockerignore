@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# local env / logs
+.env
+.env.*
+*.log
+
+# docs and misc
+README.md
+*.md
+
+# VCS (usually outside context, kept for safety)
+.git/
+.gitignore

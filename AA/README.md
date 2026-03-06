@@ -18,8 +18,18 @@ ECS Frontend Service 배포 + ALB 연결
 ## S3 Bucket (파일 업로드 저장소) 생성
 <img src="/AA/img/S3_Bucket.png">
 
+### S3 Bucket 정책 추가
+- TA S3 사용 권한 부여
+<img src="/AA/img/Bucket_Policy.png">
+
+### S3 Bucket CORS 설정
+- Frontend → S3 업로드 가능
+<img src="/AA/img/CORS.png">
+
 ## ECS Cluster 생성
 <img src="/AA/img/ECS_cluster.png">
+
+
 
 
 # AA 작업 증적 (Frontend/Integration/Infra)

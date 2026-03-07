@@ -15,10 +15,12 @@ class Config:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
+    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "meetus-audio-storage")
     
 
     # [Network Settings]
     CORE_API_URL = os.getenv("CORE_API_URL", "http://localhost:8080/api/v1")
+    SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "https://sqs.ap-northeast-2.amazonaws.com/123456789012/ai-minutes-queue")
 
 # 싱글톤처럼 사용할 전역 설정 객체
 config = Config()

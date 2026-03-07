@@ -16,8 +16,8 @@ class LLMProcessor:
             aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
         )
         
-        # 고성능/가성비 모델인 Claude 3 Sonnet 사용
-        self.model_id = 'anthropic.claude-3-sonnet-20240229-v1:0'
+        # 가장 최신의 고성능 모델이자 On-Demand가 지원되는 Claude 3.5 Sonnet 사용
+        self.model_id = 'anthropic.claude-3-5-sonnet-20240620-v1:0'
         
         # 회의 확정 명세서를 바탕으로 설계된 마스터 프롬프트
         self.system_prompt = """

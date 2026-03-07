@@ -23,11 +23,11 @@
 
 ## � Phase 4: 구조 독립성 검증 및 로컬 테스트 (대기 중)
 - [v] `src/local_test.py`: 과금 및 외부 서버 의존성 없이 AI 로직만 검증할 모의(Mock) 리포팅 파일 껍데기 작성
-- [ ] 모의(Mock) 파이프라인 가동 및 Bedrock 텍스트 요약/지시어(JSON) 추출 품질 1차 검증
-- [ ] 예외(Exception) 핸들링 정상 동작 여부 모의 데이터로 디버깅
+- [v] 모의(Mock) 파이프라인 가동 및 Bedrock 텍스트 요약/지시어(JSON) 추출 품질 1차 검증
+- [v] 예외(Exception) 핸들링 정상 동작 여부 모의 데이터로 디버깅
 
 ## 🚀 Phase 5: 인프라 배포 및 통합 연동 테스트 (예정)
-- [ ] (TA/AA 협의) 개발 서버용 실제 SQS 큐 URL 및 S3 버킷 권한 확보 (현재 Dummy URI 대체 상태)
+- [v] (TA/AA 협의) S3 버킷 권한 및 정보 확보 완료 (`meetus-audio-storage`), SQS 큐 부분은 아직 발급 대기 중
 - [ ] AWS EKS(Fargate) 컨테이너화를 위한 `Dockerfile` 작성 및 도커 이미지(ECR) 빌드 준비
 - [ ] 통합 E2E 테스트: 프론트엔드 실제 음성 업로드 -> 코어 API -> SQS -> AI 엔진 -> DB 결과 렌더링까지 전체 핑(Ping) 테스트
 - [ ] 클라우드워치(CloudWatch) 로그 그룹 연동 및 배포 에러 모니터링 세팅

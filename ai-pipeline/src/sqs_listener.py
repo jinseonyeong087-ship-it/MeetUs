@@ -23,9 +23,8 @@ class SQSListener:
             aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
         )
         
-        # 추후 TA가 생성한 SQS 큐 URL 할당 필요 (현재는 더미 또는 환경변수에서 로드했다고 가정)
-        # self.queue_url = config.SQS_QUEUE_URL
-        self.queue_url = "https://sqs.ap-northeast-2.amazonaws.com/123456789012/ai-minutes-queue" 
+        # 추후 TA가 생성한 SQS 큐 URL을 환경변수(.env)에서 로드
+        self.queue_url = config.SQS_QUEUE_URL 
         
         # 파이프라인의 각 기능 컴포넌트(부품) 조립
         self.stt = STTProcessor()
@@ -40,24 +39,23 @@ class SQSListener:
         try:
             body = json.loads(message['Body'])
             meeting_id = body.get('meeting_id')
-            s3_uri = body.get('audio_s3_key')
+            audio_s3_key = body.get('audio_s3_key')
             
-            if not meeting_id or not s3_uri:
+            if not meeting_id or not audio_s3_key:
                 raise ValueError("메시지에 필수 필드(meeting_id, audio_s3_key)가 누락되었습니다.")
 
-            print(f"\n[PIPELINE] >>> 회의록 분석 파이프라인 시작 (Meeting: {meeting_id})")
+            # 프론트/TA가 단순히 key만 보냈을 때를 대비해 정식 "s3://버킷/키" 형태로 컨버팅
+            s3_uri = audio_s3_key if audio_s3_key.startswith("s3://") else f"s3://{config.S3_BUCKET_NAME}/{audio_s3_key}"
+
+            print(f"\n[PIPELINE] >>> 회의록 분석 파이프라인 시작 (Meeting: {meeting_id}, S3: {s3_uri})")
             
-            # 1. 상태 업데이트: 작업 시작 (TRANSCRIBING)
-            self.api.update_meeting_status(meeting_id, "TRANSCRIBING")
+            # 1. 상태 업데이트: 분석 전처리 시작 (PROCESSING)
+            self.api.update_meeting_status(meeting_id, "PROCESSING")
             
             # 2. STT 변환 (오디오 -> 텍스트)
             transcript_text = self.stt.process_audio(s3_uri)
             
-            # 3. 상태 업데이트: 요약/추출 중 (PROCESSING/SUMMARIZING)
-            # (명세서의 MeetingStatus 기준 'PROCESSING'으로 통합)
-            self.api.update_meeting_status(meeting_id, "PROCESSING")
-            
-            # 4. LLM 변환 (텍스트 -> JSON 요약/할일)
+            # 3. LLM 변환 (텍스트 -> JSON 요약/할일)
             llm_result = self.llm.process_transcript(transcript_text)
             
             # 5. 최종 결과 Core API로 전송 및 완료 상태(COMPLETED)로 변경

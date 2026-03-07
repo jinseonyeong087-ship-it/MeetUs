@@ -5,6 +5,7 @@ from app.database import engine, Base
 import app.models
 
 from fastapi import FastAPI
+from app.routers import meeting_router
 
 # DB
 def init_db():
@@ -16,3 +17,9 @@ if __name__ == "__main__":
 
 # FastAPI
 app = FastAPI()
+
+app.include_router(meeting_router.router)
+
+@app.get("/")
+def root():
+    return {"message": "AI Minutes API"}

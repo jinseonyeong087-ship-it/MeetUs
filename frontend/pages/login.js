@@ -2,8 +2,8 @@ import { getCurrentSession, loginMock, signupMock } from '../api/sessionApi.js';
 
 const loginSectionEl = document.getElementById('login-section');
 const signupSectionEl = document.getElementById('signup-section');
-const showLoginBtn = document.getElementById('show-login-btn');
-const showSignupBtn = document.getElementById('show-signup-btn');
+const goLoginBtn = document.getElementById('go-login-btn') || document.getElementById('show-login-btn');
+const goSignupBtn = document.getElementById('go-signup-btn') || document.getElementById('show-signup-btn');
 
 const loginFormEl = document.getElementById('login-form');
 const loginUserIdInputEl = document.getElementById('user-id-input');
@@ -25,19 +25,19 @@ if (session) {
 function showLogin() {
   loginSectionEl.classList.remove('hidden');
   signupSectionEl.classList.add('hidden');
-  showLoginBtn.classList.add('btn-primary');
-  showSignupBtn.classList.remove('btn-primary');
 }
 
 function showSignup() {
   signupSectionEl.classList.remove('hidden');
   loginSectionEl.classList.add('hidden');
-  showSignupBtn.classList.add('btn-primary');
-  showLoginBtn.classList.remove('btn-primary');
 }
 
-showLoginBtn.addEventListener('click', showLogin);
-showSignupBtn.addEventListener('click', showSignup);
+if (goLoginBtn) {
+  goLoginBtn.addEventListener('click', showLogin);
+}
+if (goSignupBtn) {
+  goSignupBtn.addEventListener('click', showSignup);
+}
 
 loginFormEl.addEventListener('submit', async (event) => {
   event.preventDefault();

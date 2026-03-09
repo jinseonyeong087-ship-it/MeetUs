@@ -12,8 +12,8 @@
   <body>
     <main class="auth-shell">
       <section class="auth-panel">
-        <p class="eyebrow" style="color: rgba(255,255,255,0.68);">MeetUs</p>
-        <h1>AI 회의 요약 및 To-Do 아카이브</h1>
+        <p class="eyebrow" style="color: rgba(255,255,255,0.68);">AI 회의 요약 및 To-Do 아카이브</p>
+        <h1>MeetUs</h1>
         <div class="sidebar-card">
           <h3>프로토타입 범위</h3>
           <ul>
@@ -28,35 +28,30 @@
 
       <section class="auth-card-wrap">
         <div class="auth-card">
-          <div class="topbar-actions" style="justify-content: flex-start; margin-bottom: 10px;">
-            <button id="show-login-btn" class="btn btn-primary" type="button">로그인</button>
-            <button id="show-signup-btn" class="btn" type="button">회원가입</button>
-          </div>
-
           <section id="login-section">
             <p class="eyebrow">Login</p>
-            <h2>MeetUs 로그인</h2>
+            <h2>MeetUs</h2>
             <p class="muted">로그인 ID와 비밀번호를 입력하면 로그인할 수 있습니다.</p>
 
             <form id="login-form" class="auth-form">
               <div class="field">
-                <label for="user-id-input">로그인 ID</label>
-                <input id="user-id-input" type="text" placeholder="예: usr_001" required />
+                <label for="user-id-input">ID</label>
+                <input id="user-id-input" type="text" placeholder="아이디를 입력하세요" required />
               </div>
               <div class="field">
                 <label for="password-input">비밀번호</label>
-                <input id="password-input" type="password" placeholder="비밀번호 입력" required />
+                <input id="password-input" type="password" placeholder="비밀번호를 입력하세요" required />
               </div>
               <button class="btn btn-primary" type="submit">로그인</button>
             </form>
+            <button id="go-signup-btn" class="auth-switch-link" type="button">회원가입 하기</button>
 
             <p id="login-error" class="muted" style="margin-top: 12px;"></p>
           </section>
 
           <section id="signup-section" class="hidden">
             <p class="eyebrow">Sign Up</p>
-            <h2>계정 생성</h2>
-            <p class="muted">회원가입 후 같은 화면에서 바로 로그인할 수 있습니다.</p>
+            <h2>MeetUs</h2>
 
             <form id="signup-form" class="auth-form">
               <div class="field">
@@ -77,14 +72,10 @@
               </div>
               <button class="btn btn-primary" type="submit">회원가입</button>
             </form>
+            <button id="go-login-btn" class="auth-switch-link" type="button">로그인 하러가기</button>
 
             <p id="signup-error" class="muted" style="margin-top: 12px;"></p>
           </section>
-
-          <div class="auth-helper">
-            <p class="eyebrow">Demo Mode</p>
-            <p class="muted">예: `usr_001 / 1234` 로 로그인하거나, 새 계정을 만든 뒤 그 ID로 워크스페이스 초대 흐름을 테스트할 수 있습니다.</p>
-          </div>
         </div>
       </section>
     </main>

@@ -704,6 +704,24 @@ select {
   margin-top: var(--space-4);
 }
 
+.auth-switch-link {
+  margin-top: var(--space-2);
+  border: 0;
+  background: transparent !important;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 0;
+  width: 100%;
+  display: block;
+  text-align: center;
+  cursor: pointer;
+}
+
+.auth-switch-link:hover {
+  color: var(--text-strong);
+  text-decoration: underline;
+}
+
 .auth-helper {
   margin-top: var(--space-5);
   padding-top: var(--space-5);

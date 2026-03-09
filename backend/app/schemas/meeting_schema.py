@@ -4,6 +4,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
+from datetime import date
 from typing import List, Optional
 
 class MeetingCreate(BaseModel):
@@ -28,6 +29,8 @@ class TodoResponse(BaseModel):
     todo_id: UUID
     task: str
     status: str
+    assignee: Optional[str] = None
+    due_date: Optional[date] = None
     
     class Config:
         from_attributes = True

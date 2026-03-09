@@ -18,18 +18,21 @@ BUCKET = os.getenv("S3_BUCKET")
 def generate_upload_url(meeting_id: str):
 
     key = f"audio/{meeting_id}/{uuid.uuid4()}.m4a"
+    content_type = "audio/mp4"
 
     url = s3.generate_presigned_url(
         "put_object",
         Params={
             "Bucket": BUCKET,
             "Key": key,
-            "ContentType": "audio/mp4"
+            "ContentType": content_type
         },
         ExpiresIn=3600
     )
 
     return {
         "upload_url": url,
-        "s3_key": key
+        "audio_key": key,
+        "s3_key": key,
+        "content_type": content_type
     }

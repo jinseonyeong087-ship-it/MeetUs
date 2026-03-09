@@ -1,0 +1,43 @@
+name: Deploy AI Pipeline (SA) to Amazon ECR
+
+on:
+  push:
+    branches:
+      - main  # 최종 통합은 main 기준이므로 main으로 설정 (협의에 따라 develop 등으로 변경 가능)
+    paths:
+      - 'ai-pipeline/**' # 이 폴더 안의 파일이 변경될 때만 실행 (가장 핵심!)
+
+env:
+  AWS_REGION: ap-northeast-2 # 서울 리전
+  ECR_REPOSITORY: ai-minutes-sa-repo # ECR 생성 시 지정할 이름
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # 빌드는 ai-pipeline 폴더 내에서 진행해야 함
+          cd ai-pipeline
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest

@@ -28,6 +28,7 @@
 
 ## 🚀 Phase 5: 인프라 배포 및 통합 연동 테스트 (예정)
 - [v] (TA/AA 협의) S3 버킷 권한 및 정보 확보 완료 (`meetus-audio-storage`), SQS 큐 부분은 아직 발급 대기 중
-- [ ] AWS EKS(Fargate) 컨테이너화를 위한 `Dockerfile` 작성 및 도커 이미지(ECR) 빌드 준비
+- [v] AWS EKS(Fargate) 컨테이너화를 위한 `Dockerfile` 작성 및 도커 이미지(ECR) 빌드 준비
+- [v] 배포 최적화를 위한 `.dockerignore` 및 GitHub Actions (ECR 자동 배포) CI/CD 스크립트 구축 완료
 - [ ] 통합 E2E 테스트: 프론트엔드 실제 음성 업로드 -> 코어 API -> SQS -> AI 엔진 -> DB 결과 렌더링까지 전체 핑(Ping) 테스트
 - [ ] 클라우드워치(CloudWatch) 로그 그룹 연동 및 배포 에러 모니터링 세팅

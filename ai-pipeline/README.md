@@ -30,9 +30,11 @@
    ```bash
    pip install -r requirements.txt
    ```
-3. **환경 변수 세팅:** `.env` 파일을 생성하고 필요한 API Key들을 설정합니다. [cite: User Summary]
+3. **환경 변수 세팅:** `.env` 파일을 생성하고 필요한 API Key들을 설정합니다. 
+4. **로컬 모의 테스트:** `local_test.py` 스크립트를 사용하여 과금 없이 로컬에서 Bedrock 요약 모델 테스트를 진행할 수 있습니다.
+5. **도커 배포 준비:** (운영 환경용) `Dockerfile`이 `python:3.12-slim` 버전 기반으로 작성되어 있으므로 EKS(Fargate) 환경 배포 준비가 되었습니다.
 
 ## ⚖️ Development Rules
-- 모든 코드는 `ai_context/default/GUIDELINES.md`의 규칙을 최우선으로 준수한다. [cite: Saved Information]
-- 데이터베이스 연동 및 API 통신 시 `AWS_RULES.md`에 정의된 네이밍 컨벤션(Snake/Camel Case)을 따른다. [cite: Saved Information]
-- 작업 진행 상황은 `docs/SA-Todo.md`에 업데이트하여 팀원들과 공유한다. [cite: Saved Information]
+- 모든 코드는 `ai_context/default/GUIDELINES.md`의 규칙을 최우선으로 준수한다. 
+- 데이터베이스 연동 및 API 통신 시 `AWS_RULES.md`에 정의된 네이밍 컨벤션(Snake/Camel Case)을 따른다. 
+- 작업 진행 상황은 `docs/SA-Todo.md`에 업데이트하여 팀원들과 공유한다. 

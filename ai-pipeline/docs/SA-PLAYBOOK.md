@@ -86,3 +86,6 @@
   2. Bedrock 요약이 규격(JSON)에 맞게 잘 반환되는지 성공적으로 검증
   3. 안정성과 경량화를 고려한 `python:3.12-slim` 기반의 AWS EKS 배포용 `Dockerfile` 생성 완료.
   4. 도커 이미지 최적화 및 보안 강화를 위한 `.dockerignore` 추가, 프론트/백엔드와 독립적으로 동작(MSA)하는 AWS ECR 자동 배포 CI/CD 파이프라인(`deploy-sa.yml`) 연동 완료.
+  - `SA-PLAYBOOK.md` 업데이트 완료
+  - AWS IAM 정책 적용 완료: `PowerUser` 등의 광범위한 권한 대신, 리소스를 제한하는 Custom IAM Role 정책(Inline) 적용하여 보안성 대폭 강화 완료 (`iam_policy_least_privilege.json`)
+  - **[보안 고도화]** `deploy-sa.yml`의 IAM 영구 Access Key 인증 방식을 **단기 자격 증명(OIDC Role Assuming)** 방식으로 업그레이드 완료 (GitHub Secrets `SA_AWS_ROLE_TO_ASSUME` 사용). 인라인 정책을 적용하여, 오직 `ai-minutes-sa` ECR 저장소에만 접근할 수 있도록 보안(최소 권한의 원칙)을 강화함. AWS CLI를 통해 ECR 저장소 생성을 완료함.

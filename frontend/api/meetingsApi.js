@@ -145,23 +145,22 @@ export async function createMeeting({ title, date, participants, fileName, works
     throw new Error('워크스페이스를 먼저 선택해주세요.');
   }
 
-  const body = JSON.stringify({
-    workspace_id: workspaceId,
-    title: title.trim()
-  });
   let payload;
   try {
-    payload = await request('/meetings', {
-      method: 'POST',
-      headers: getHeaders({ 'Content-Type': 'application/json' }),
-      body
-    });
-  } catch (error) {
-    // Backward compatibility for older TA spec route.
     payload = await request(`/workspaces/${encodeURIComponent(workspaceId)}/meetings`, {
       method: 'POST',
       headers: getHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ title: title.trim() })
+    });
+  } catch (error) {
+    // Backward compatibility for alternate TA spec route.
+    payload = await request('/meetings', {
+      method: 'POST',
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        workspace_id: workspaceId,
+        title: title.trim()
+      })
     });
   }
 
@@ -199,14 +198,15 @@ export async function getUploadUrl(meetingId) {
 
   const uploadUrl = uploadPayload?.upload_url;
   const audioKey = uploadPayload?.s3_key;
+  const contentType = uploadPayload?.content_type || 'audio/mp4';
   if (!uploadUrl || !audioKey) {
     throw new Error('업로드 URL 발급 응답이 올바르지 않습니다.');
   }
 
-  return { uploadUrl, audioKey };
+  return { uploadUrl, audioKey, contentType };
 }
 
-export async function uploadToS3(uploadUrl, file) {
+export async function uploadToS3(uploadUrl, file, contentType = 'audio/mp4') {
   if (!file) {
     throw new Error('업로드할 파일이 필요합니다.');
   }
@@ -214,7 +214,7 @@ export async function uploadToS3(uploadUrl, file) {
   const uploadResponse = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': file.type || 'audio/mp4'
+      'Content-Type': contentType
     },
     body: file
   });
@@ -232,8 +232,8 @@ export async function notifyUploadComplete(meetingId, audioKey) {
 }
 
 export async function startUpload(meetingId, { file } = {}) {
-  const { uploadUrl, audioKey } = await getUploadUrl(meetingId);
-  await uploadToS3(uploadUrl, file);
+  const { uploadUrl, audioKey, contentType } = await getUploadUrl(meetingId);
+  await uploadToS3(uploadUrl, file, contentType);
   await notifyUploadComplete(meetingId, audioKey);
 
   await request(`/meetings/${encodeURIComponent(meetingId)}/process`, {

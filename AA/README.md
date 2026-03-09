@@ -41,6 +41,23 @@ ECS Frontend Service 배포 + ALB 연결
 ## 타켓그룹 생성
 <img src="/AA/img/targetgroup.png">
 
+## 시큐리티 그룹 생성
+<img src="/AA/img/security_group.png">
+
+## 80port 열기
+<img src="/AA/img/80port.png">
+
+## ALB 생성
+<img src="/AA/img/ALB_create.png">
+
+## 리스너 생성
+<img src="/AA/img/Listener_create.png">
+
+## ECS Task Definition 생성
+<img src="/AA/img/ECS_Task_Definition.png">
+
+## ECS Service 생성
+<img src="/AA/img/ECS_service.png">
 
 # AA 작업 증적 (Frontend/Integration/Infra)
 

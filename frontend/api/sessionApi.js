@@ -17,7 +17,9 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const message = payload?.message || '요청 처리 중 오류가 발생했습니다.';
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
@@ -63,10 +65,18 @@ export async function loginMock({ userId, password }) {
     throw new Error('이메일과 비밀번호를 입력해주세요.');
   }
 
-  const payload = await request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password: password.trim() })
-  });
+  let payload;
+  try {
+    payload = await request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password: password.trim() })
+    });
+  } catch (error) {
+    if (error?.status === 404) {
+      throw new Error('현재 백엔드에 로그인 API(/auth/login)가 아직 구현되지 않았습니다.');
+    }
+    throw error;
+  }
 
   const accessToken = payload?.access_token;
   if (!accessToken) {
@@ -93,19 +103,27 @@ export async function signupMock({ userId, name, email, password }) {
     throw new Error('회원가입 정보를 모두 입력해주세요.');
   }
 
-  return request('/auth/signup', {
-    method: 'POST',
-    body: JSON.stringify({
-      email: email.trim(),
+  try {
+    const account = await request('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: email.trim(),
+        name: name.trim(),
+        password: password.trim()
+      })
+    });
+    return {
+      userId: account?.user_id || userId?.trim() || email.trim(),
       name: name.trim(),
+      email: email.trim(),
       password: password.trim()
-    })
-  }).then((account) => ({
-    userId: account?.user_id || userId?.trim() || email.trim(),
-    name: name.trim(),
-    email: email.trim(),
-    password: password.trim()
-  }));
+    };
+  } catch (error) {
+    if (error?.status === 404) {
+      throw new Error('현재 백엔드에 회원가입 API(/auth/signup)가 아직 구현되지 않았습니다.');
+    }
+    throw error;
+  }
 }
 
 export function logoutMock() {

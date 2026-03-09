@@ -56,7 +56,7 @@ function normalizeMeeting(base, detail) {
 
   return {
     meetingId: base.meeting_id,
-    workspaceId: localMeta.workspaceId || '',
+    workspaceId: base.workspace_id || localMeta.workspaceId || '',
     title: base.title || '제목 없음',
     startedAt: localMeta.startedAt || createdAt,
     createdAt,
@@ -95,7 +95,7 @@ function sortMeetings(meetings, sort = 'date-desc') {
 
 export async function getMeetings(filters = {}) {
   const params = new URLSearchParams();
-  if (filters.workspaceId) params.set('workspaceId', filters.workspaceId);
+  if (filters.workspaceId) params.set('workspace_id', filters.workspaceId);
   if ((filters.query || '').trim()) params.set('query', filters.query.trim());
   if (filters.status && filters.status !== 'ALL') params.set('status', filters.status);
   if (filters.fromDate) params.set('fromDate', filters.fromDate);
@@ -145,11 +145,25 @@ export async function createMeeting({ title, date, participants, fileName, works
     throw new Error('워크스페이스를 먼저 선택해주세요.');
   }
 
-  const payload = await request(`/workspaces/${encodeURIComponent(workspaceId)}/meetings`, {
-    method: 'POST',
-    headers: getHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ title: title.trim() })
+  const body = JSON.stringify({
+    workspace_id: workspaceId,
+    title: title.trim()
   });
+  let payload;
+  try {
+    payload = await request('/meetings', {
+      method: 'POST',
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
+      body
+    });
+  } catch (error) {
+    // Backward compatibility for older TA spec route.
+    payload = await request(`/workspaces/${encodeURIComponent(workspaceId)}/meetings`, {
+      method: 'POST',
+      headers: getHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ title: title.trim() })
+    });
+  }
 
   const meetingId = payload?.meeting_id;
   if (!meetingId) {

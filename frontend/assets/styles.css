@@ -397,7 +397,7 @@ select {
 .field input:focus,
 .field select:focus {
   border-color: var(--accent);
-  background: #343434;
+  background: #ffffff;
 }
 
 .meeting-list,

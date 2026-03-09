@@ -151,7 +151,7 @@
 ```json
 {
   "upload_url": "https://s3-presigned-url",
-  "audio_s3_key": "audio/{meetingId}/uuid.m4a",
+  "s3_key": "audio/{meetingId}/uuid.m4a",
   "content_type": "audio/mp4"
 }
 ```

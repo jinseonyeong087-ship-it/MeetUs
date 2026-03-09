@@ -46,7 +46,7 @@ class LLMProcessor:
         :param transcript_text: STT 원본 텍스트
         :return: 파싱 완료된 요약 및 To-Do 딕셔너리
         """
-        print("[LLM] Amazon Bedrock (Claude 3) 모델에 텍스트 분석 요청...")
+        print("[LLM] Requesting text analysis to Amazon Bedrock (Claude 3)...")
         
         try:
             # Bedrock Claude 3 Messages API 형식 규격
@@ -74,6 +74,9 @@ class LLMProcessor:
             response_body = json.loads(response.get('body').read())
             result_json_str = response_body.get('content')[0].get('text')
             
+            # Log summary statistics
+            print(f"[LLM] Analysis data received (Summary Length: {len(result_json_str)})")
+            
             # 마크다운 블록이 섞여있을 경우 제거
             if result_json_str.startswith("```json"):
                 result_json_str = result_json_str.replace("```json", "", 1)
@@ -86,10 +89,11 @@ class LLMProcessor:
             parsed_result = json.loads(result_json_str)
             
             todo_count = len(parsed_result.get('todos', []))
-            print(f"[LLM] 요약 및 To-Do 추출 완료! (추출된 할 일: {todo_count}건)")
+            print(f"[LLM] Summary and To-Do extraction completed! (Todos: {todo_count})")
             
             return parsed_result
             
         except Exception as e:
-            print(f"[LLM_ERROR] Amazon Bedrock API 호출 또는 JSON 파싱 중 오류 발생: {e}")
+            print(f"[LLM_ERROR] Error during Bedrock API call or JSON parsing: {e}")
             raise e
+```

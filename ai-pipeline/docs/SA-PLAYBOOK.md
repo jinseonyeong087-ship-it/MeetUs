@@ -19,9 +19,19 @@
 - **설치 유물 제거:** `rm -rf aws/ awscliv2.zip` 명령으로 설치용 임시 파일 정리 완료.
 
 ## ⚠️ 트러블슈팅 (Troubleshooting)
-- **문제:** `python` 명령어를 찾을 수 없음.
-- **원인:** WSL/Ubuntu 환경에서는 `python3`가 기본 명칭임.
-- **해결:** `python3 -m venv venv`로 생성 후 `source venv/bin/activate`로 활성화.
+1. **[설정] 가상환경 활성화 문제**
+   - **문제:** `python` 명령어를 찾을 수 없음.
+   - **원인:** WSL/Ubuntu 환경에서는 `python3`가 기본 명칭임.
+   - **해결:** `python3 -m venv venv`로 생성 후 `source venv/bin/activate`로 활성화.
+2. **[보안] IAM 액세스 키 영구 노출 보안 위협 방어**
+   - **문제:** 기존 IAM User Access Key를 GitHub Secrets에 영구 저장하는 방식은 피싱/탈취 시 회사 AWS 인프라 전체가 뚫리는 심각한 보안 리스크 존재.
+   - **해결:** 최신 클라우드 보안 표준인 **OIDC(OpenID Connect)** 자격 증명 공급자 방식을 도입하여 영구적인 비밀번호 탈취 위험을 원천 차단함.
+3. **[보안] 과도한 AWS 관리형 권한 부여 리스크 차단**
+   - **문제:** 처음 배포 테스트 시 광범위한 `PowerUserAccess` 권한을 부여하여, 해킹 시 다른 파트 리소스까지 노출될 수 있는 보안 취약점 상태.
+   - **해결:** 오직 `ai-minutes-sa` ECR 저장소 접근 및 파이프라인(STT/LLM) 구동에만 한정된 **최소 권한 원칙(Least Privilege) 인라인 정책**(`iam_policy_least_privilege.json`)을 재설계하여 Role에 부여 완료.
+4. **[테스트] 타 파트 연동 지연으로 인한 개발 블로킹 둥파**
+   - **문제:** 프론트 음성 업로드나 백엔드 서버가 나오기 전까지, 단독으로 STT/LLM 결과물 컨디션 확인 및 테스트가 불가능한 상황 발생.
+   - **해결:** 과금 방지 및 외부 의존도를 0%로 끊어낸 단독 로컬 모의 테스트 스크립트(`local_test.py`)를 작성하여 AI 성능을 사전 검증 완료.
 
 ## 🛠️ 향후 작업 예정 로직 (Draft)
 - SQS 리스너 구현 시 `WaitTimeSeconds=20` 설정을 통해 비용 최적화(Long Polling) 적용 예정.
@@ -54,8 +64,8 @@
 - **대상 파일:** `ai-pipeline/src/core/stt_processor.py`, `ai-pipeline/src/network/api_client.py`, `ai-pipeline/src/sqs_listener.py`
 - **상세 내용:** 
   1. AWS Transcribe를 호출하고 결과를 가져오는 STT 코어 모듈 작성 (m4a, ko-KR 기준).
-  2. Core API(FastAPI)와 통신하여 상태 업데이드 및 최종 결과(JSON)를 전송하는 우체부 API Client 구비.
-  3. 전체 파이프라인(STT->LLM->API_CLIENT)을 통합하여 24시간 롱 폴링(Long Polling)으로 큐를 감시하는 메인 컨트롤러 SQS Listener 조립 완료.
+   2. Core API(FastAPI)와 통신하여 상태 업데이드 및 최종 결과(JSON)를 전송하는 우체부 API Client 구비.
+   3. 전체 파이프라인(STT->LLM->API_CLIENT)을 통합하여 24시간 롱 폴링(Long Polling)으로 큐를 감시하는 메인 컨트롤러 SQS Listener 조립 완료.
 
 ### 🔄 [변경/수정: MODIFICATION]
 - **일시:** 2026-03-05
@@ -74,17 +84,17 @@
 ### 🔄 [변경/수정: MODIFICATION]
 - **일시:** 2026-03-05
 - **변경 위치:** `ai-pipeline/docs/FEATURES.md` 및 `ai_context/project_current/AWS_RULES.md`
-- **변경 전:** 회의록 진행 상태를 `TRANSCRIBING` -> `SUMMARIZING` -> `TODO_EXTRACTING` 등의 5단계로 세분화.
-- **변경 후:** Backend API 명세서(api-spec.md)의 단순화된 전이 규격에 맞춰 `TRANSCRIBING` -> `PROCESSING` -> `COMPLETED` 3단계로 통합 및 덮어쓰기 적용.
-- **수정 사유:** 파이프라인의 내부 세세한 상태(STT/LLM 전이)보다, 프론트엔드와 코어 API 간의 직관적인 공통 상태값 규격(PROCESSING)을 따르기 위함.
+- **변경 전:** 회의록 진행 상태를 `UPLOADED` -> `PROCESSING` -> `COMPLETED` 3단계로 약식 설계.
+- **변경 후:** 마스터 명세서(v1.0)의 전역 규격에 맞춰 `CREATED` -> `UPLOADED` -> `PROCESSING` -> `COMPLETED` -> `FAILED` 5단계 공식 상태 머신 적용.
+- **수정 사유:** 전사 시스템 간 데이터 무결성 확보와 상태 추적의 정밀도를 마스터 명세서와 100% 동기화하기 위함.
 
 ### ➕ [추가: ADDITION]
-- **일시:** 2026-03-09
+- **일시:** 2026-03-06 ~ 2026-03-09
 - **대상 파일:** `ai-pipeline/src/local_test.py`, `ai-pipeline/Dockerfile`, `ai-pipeline/.dockerignore`, `.github/workflows/deploy-sa.yml`
 - **상세 내용:** 
   1. 가짜(Mock) S3 URI 및 가상의 녹음 텍스트를 활용하여 물리적인 STT 처리 없이 로직의 흐름을 빠르게 검증할 수 있는 `local_test.py` 스크립트 작성 (완료)
   2. Bedrock 요약이 규격(JSON)에 맞게 잘 반환되는지 성공적으로 검증
-  3. 안정성과 경량화를 고려한 `python:3.12-slim` 기반의 AWS EKS 배포용 `Dockerfile` 생성 완료.
+  3. 안정성과 경량화를 고려한 `python:3.12-slim` 기반의 AWS ECS(Fargate) 배포용 `Dockerfile` 생성 완료.
   4. 도커 이미지 최적화 및 보안 강화를 위한 `.dockerignore` 추가, 프론트/백엔드와 독립적으로 동작(MSA)하는 AWS ECR 자동 배포 CI/CD 파이프라인(`deploy-sa.yml`) 연동 완료.
   - `SA-PLAYBOOK.md` 업데이트 완료
   - AWS IAM 정책 적용 완료: `PowerUser` 등의 광범위한 권한 대신, 리소스를 제한하는 Custom IAM Role 정책(Inline) 적용하여 보안성 대폭 강화 완료 (`iam_policy_least_privilege.json`)

@@ -20,7 +20,7 @@ class Config:
 
     # [Network Settings]
     CORE_API_URL = os.getenv("CORE_API_URL", "http://localhost:8080/api/v1")
-    SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "https://sqs.ap-northeast-2.amazonaws.com/123456789012/ai-minutes-queue")
+    SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", "https://sqs.ap-northeast-2.amazonaws.com/692681389373/meetus-process-queue")
 
 # 싱글톤처럼 사용할 전역 설정 객체
 config = Config()

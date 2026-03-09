@@ -151,6 +151,7 @@
 ```json
 {
   "upload_url": "https://s3-presigned-url",
+  "audio_key": "audio/{meetingId}/uuid.m4a",
   "s3_key": "audio/{meetingId}/uuid.m4a",
   "content_type": "audio/mp4"
 }
@@ -363,6 +364,16 @@ meeting.status = COMPLETED
 ```json
 {
   "status": "saved"
+}
+```
+
+---
+## Common Error Response
+
+```json
+{
+  "code": "INTERNAL_ERROR",
+  "message": "처리 중 오류가 발생했습니다."
 }
 ```
 ---

@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import date, datetime, timedelta
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,7 +18,8 @@ from app.schemas.meeting_schema import (
 from app.models.transcript import Transcript
 from app.models.summary import Summary
 from app.models.todo import Todo
-from typing import Optional
+from app.models.user import User
+from app.models.workspace_member import WorkspaceMember
 
 router = APIRouter(
     prefix="/meetings",
@@ -38,7 +42,7 @@ def create_upload_url(
 
     result = generate_upload_url(meeting_id)
 
-    meeting.audio_s3_key = result["s3_key"]
+    meeting.audio_s3_key = result.get("audio_key") or result.get("s3_key")
 
     db.commit()
 
@@ -63,9 +67,12 @@ def upload_complete(
 
 @router.get("", response_model=MeetingListResponse)
 def get_meetings(
-    workspace_id: Optional[str] = None,
+    workspace_id: Optional[str] = Query(default=None, alias="workspaceId"),
     status: Optional[str] = None,
     query: Optional[str] = None,
+    from_date: Optional[date] = Query(default=None, alias="fromDate"),
+    to_date: Optional[date] = Query(default=None, alias="toDate"),
+    sort: Optional[str] = Query(default="date-desc"),
     page: int = 0,
     size: int = 10,
     db: Session = Depends(get_db)
@@ -75,12 +82,27 @@ def get_meetings(
     if workspace_id:
         stmt = stmt.filter(Meeting.workspace_id == workspace_id)
     if status:
-        stmt = stmt.filter(Meeting.status == status)
+        try:
+            stmt = stmt.filter(Meeting.status == MeetingStatus(status))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid meeting status")
     if query:
         stmt = stmt.filter(Meeting.title.ilike(f"%{query}%"))
+    if from_date:
+        stmt = stmt.filter(Meeting.created_at >= datetime.combine(from_date, datetime.min.time()))
+    if to_date:
+        to_date_exclusive = datetime.combine(to_date + timedelta(days=1), datetime.min.time())
+        stmt = stmt.filter(Meeting.created_at < to_date_exclusive)
         
     total = stmt.count()
-    meetings = stmt.order_by(Meeting.created_at.desc()).offset(page * size).limit(size).all()
+    if sort == "date-asc":
+        stmt = stmt.order_by(Meeting.created_at.asc())
+    elif sort == "status":
+        stmt = stmt.order_by(Meeting.status.asc(), Meeting.created_at.desc())
+    else:
+        stmt = stmt.order_by(Meeting.created_at.desc())
+
+    meetings = stmt.offset(page * size).limit(size).all()
     
     return {
         "meetings": meetings,
@@ -96,14 +118,29 @@ def get_meeting_detail(meeting_id: str, db: Session = Depends(get_db)):
         
     transcript = db.query(Transcript).filter(Transcript.meeting_id == meeting_id).first()
     summary = db.query(Summary).filter(Summary.meeting_id == meeting_id).first()
-    todos = db.query(Todo).filter(Todo.meeting_id == meeting_id).all()
+    todo_rows = (
+        db.query(Todo, User.name.label("assignee_name"))
+        .outerjoin(WorkspaceMember, WorkspaceMember.member_id == Todo.assignee_member_id)
+        .outerjoin(User, User.user_id == WorkspaceMember.user_id)
+        .filter(Todo.meeting_id == meeting_id)
+        .all()
+    )
     
     return {
         "meeting": meeting,
         "transcript": transcript.full_text if transcript else None,
         "summary": summary.summary_text if summary else None,
         "decisions": summary.decisions_text if summary else None,
-        "todos": todos
+        "todos": [
+            {
+                "todo_id": todo.todo_id,
+                "task": todo.task,
+                "status": todo.status.value,
+                "due_date": todo.due_date,
+                "assignee": assignee_name
+            }
+            for todo, assignee_name in todo_rows
+        ]
     }
 
 

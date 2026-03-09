@@ -17,6 +17,12 @@ class Todo(Base):
         nullable=False
     )
 
+    assignee_member_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("workspace_members.member_id"),
+        nullable=True
+    )
+
     task = Column(Text, nullable=False)
 
     due_date = Column(Date)

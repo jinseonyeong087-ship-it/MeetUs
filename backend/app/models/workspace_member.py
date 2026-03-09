@@ -1,5 +1,6 @@
-from sqlalchemy import Column, ForeignKey
+from sqlalchemy import Column, ForeignKey, String, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 from app.database import Base
 import uuid
 
@@ -20,3 +21,7 @@ class WorkspaceMember(Base):
         ForeignKey("users.user_id"),
         nullable=False
     )
+
+    role = Column(String(50), nullable=False, default="MEMBER")
+
+    created_at = Column(TIMESTAMP, server_default=func.now())

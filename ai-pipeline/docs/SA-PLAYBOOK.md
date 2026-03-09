@@ -25,6 +25,7 @@
 
 ## 🛠️ 향후 작업 예정 로직 (Draft)
 - SQS 리스너 구현 시 `WaitTimeSeconds=20` 설정을 통해 비용 최적화(Long Polling) 적용 예정.
+- 클라우드워치(CloudWatch) 등 배포 이후 인프라 연동 에러 핸들링 고도화 모니터링 적용 검토.
 
 ---
 
@@ -76,3 +77,12 @@
 - **변경 전:** 회의록 진행 상태를 `TRANSCRIBING` -> `SUMMARIZING` -> `TODO_EXTRACTING` 등의 5단계로 세분화.
 - **변경 후:** Backend API 명세서(api-spec.md)의 단순화된 전이 규격에 맞춰 `TRANSCRIBING` -> `PROCESSING` -> `COMPLETED` 3단계로 통합 및 덮어쓰기 적용.
 - **수정 사유:** 파이프라인의 내부 세세한 상태(STT/LLM 전이)보다, 프론트엔드와 코어 API 간의 직관적인 공통 상태값 규격(PROCESSING)을 따르기 위함.
+
+### ➕ [추가: ADDITION]
+- **일시:** 2026-03-09
+- **대상 파일:** `ai-pipeline/src/local_test.py`, `ai-pipeline/Dockerfile`, `ai-pipeline/.dockerignore`, `.github/workflows/deploy-sa.yml`
+- **상세 내용:** 
+  1. 가짜(Mock) S3 URI 및 가상의 녹음 텍스트를 활용하여 물리적인 STT 처리 없이 로직의 흐름을 빠르게 검증할 수 있는 `local_test.py` 스크립트 작성 (완료)
+  2. Bedrock 요약이 규격(JSON)에 맞게 잘 반환되는지 성공적으로 검증
+  3. 안정성과 경량화를 고려한 `python:3.12-slim` 기반의 AWS EKS 배포용 `Dockerfile` 생성 완료.
+  4. 도커 이미지 최적화 및 보안 강화를 위한 `.dockerignore` 추가, 프론트/백엔드와 독립적으로 동작(MSA)하는 AWS ECR 자동 배포 CI/CD 파이프라인(`deploy-sa.yml`) 연동 완료.

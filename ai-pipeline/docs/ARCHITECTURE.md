@@ -10,9 +10,9 @@ AI 처리(STT 및 LLM)는 짧게는 수십 초에서 길게는 수 분이 걸리
 2. **[FE ➡️ Core]** 업로드 완료 후, 클라이언트는 Core API(TA)를 호출하여 파일의 S3 URL 및 메타데이터를 전달.
 3. **[Core DB & SQS]** TA 서버는 DB에 회의 기본 정보(상태: `UPLOADED`)를 저장하고, AWS SQS에 AI 작업 지시 메시지(JSON, 파일 URL 포함)를 발행.
 4. **[AI 서버 폴링]** SA 파이썬 엔진은 백그라운드에서 주기적으로 SQS 큐를 확인(Polling)하다가 메시지를 수신 (실패 시 **최대 3회 자동 재처리**).
-5. **[AI Processing]** - AWS Transcribe API를 호출하여 STT 변환 진행 (상태: `TRANSCRIBING`).
-   - 변환된 원본 텍스트를 LLM에 전달하여 요약(전체 5~7줄 및 결정사항) (상태: `SUMMARIZING`).
-   - LLM에 프롬프트를 주입하여 담당자별 To-Do 데이터를 JSON 포맷(`assignee`, `task`, `due_date`)으로 추출 (상태: `TODO_EXTRACTING`).
+5. **[AI Processing]** 
+   - AWS Transcribe API를 호출하여 STT 변환 진행 (상태: `TRANSCRIBING`).
+   - 변환된 원본 텍스트를 LLM(Amazon Bedrock Claude 3)에 전달하여 전체 요약(5~7줄) 및 결정사항, 담당자별 To-Do(JSON) 데이터를 한 번에 추출 (상태: `PROCESSING`).
 6. **[AI ➡️ Core]** AI 처리가 완료되면 SA 엔진이 Core API(웹훅 형태)를 호출하여 DB의 최종 상태(`COMPLETED`) 및 결과 데이터 분리 업데이트. 에러가 3회 누적되면 큐에서 제거 후 최종 `FAILED` 처리.
 
 ## 2. 데이터베이스 바운더리 (DB Boundaries)

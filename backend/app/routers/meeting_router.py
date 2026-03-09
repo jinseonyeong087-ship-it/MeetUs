@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.database import get_db
-from app.schemas.meeting_schema import MeetingCreate, MeetingResponse
-from app.services.meeting_service import create_meeting
+from app.models.meeting import Meeting
+from app.services.s3_service import generate_upload_url
 
 router = APIRouter(
     prefix="/meetings",
@@ -10,9 +11,24 @@ router = APIRouter(
 )
 
 
-@router.post("", response_model=MeetingResponse)
-def create_meeting_api(
-    meeting: MeetingCreate,
+@router.post("/{meeting_id}/upload-url")
+def create_upload_url(
+    meeting_id: str,
     db: Session = Depends(get_db)
 ):
-    return create_meeting(db, meeting.workspace_id, meeting.title)
+
+    meeting = db.query(Meeting).filter(
+        Meeting.meeting_id == meeting_id
+    ).first()
+
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+    result = generate_upload_url(meeting_id)
+
+    meeting.audio_s3_key = result["s3_key"]
+    meeting.status = "UPLOADED"
+
+    db.commit()
+
+    return result

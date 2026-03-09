@@ -29,6 +29,14 @@ ECS Frontend Service 배포 + ALB 연결
 ## ECS Cluster 생성
 <img src="/AA/img/ECS_cluster.png">
 
+## 도커 이미지 빌드
+<img src="/AA/img/docker_image.png">
+
+### 도커 이미지 태그
+<img src="/AA/img/image_tag.png">
+
+## ECR push
+<img src="/AA/img/ECR_push.png">
 
 
 

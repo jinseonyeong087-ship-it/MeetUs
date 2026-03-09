@@ -140,7 +140,7 @@ export async function getMeetingById(meetingId) {
   );
 }
 
-export async function createMockMeeting({ title, date, participants, fileName, workspaceId }) {
+export async function createMeeting({ title, date, participants, fileName, workspaceId }) {
   if (!workspaceId) {
     throw new Error('워크스페이스를 먼저 선택해주세요.');
   }
@@ -174,11 +174,7 @@ export async function createMockMeeting({ title, date, participants, fileName, w
   };
 }
 
-export async function startMockUpload(meetingId, { file } = {}) {
-  if (!file) {
-    throw new Error('업로드할 파일이 필요합니다.');
-  }
-
+export async function getUploadUrl(meetingId) {
   const uploadPayload = await request(
     `/meetings/${encodeURIComponent(meetingId)}/upload-url`,
     {
@@ -188,9 +184,17 @@ export async function startMockUpload(meetingId, { file } = {}) {
   );
 
   const uploadUrl = uploadPayload?.upload_url;
-  const audioKey = uploadPayload?.audio_key;
+  const audioKey = uploadPayload?.s3_key;
   if (!uploadUrl || !audioKey) {
     throw new Error('업로드 URL 발급 응답이 올바르지 않습니다.');
+  }
+
+  return { uploadUrl, audioKey };
+}
+
+export async function uploadToS3(uploadUrl, file) {
+  if (!file) {
+    throw new Error('업로드할 파일이 필요합니다.');
   }
 
   const uploadResponse = await fetch(uploadUrl, {
@@ -203,12 +207,20 @@ export async function startMockUpload(meetingId, { file } = {}) {
   if (!uploadResponse.ok) {
     throw new Error('S3 업로드에 실패했습니다.');
   }
+}
 
+export async function notifyUploadComplete(meetingId, audioKey) {
   await request(`/meetings/${encodeURIComponent(meetingId)}/upload-complete`, {
     method: 'POST',
     headers: getHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ audio_s3_key: audioKey })
   });
+}
+
+export async function startUpload(meetingId, { file } = {}) {
+  const { uploadUrl, audioKey } = await getUploadUrl(meetingId);
+  await uploadToS3(uploadUrl, file);
+  await notifyUploadComplete(meetingId, audioKey);
 
   await request(`/meetings/${encodeURIComponent(meetingId)}/process`, {
     method: 'POST',

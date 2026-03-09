@@ -135,6 +135,52 @@ def invite_workspace_member(
     return {"status": "invited"}
 
 
+@router.get("/{workspace_id}/members")
+def get_workspace_members(
+    workspace_id: str,
+    db: Session = Depends(get_db),
+    user_id: str | None = Depends(get_current_user_id)
+):
+    user = _require_user(db, user_id)
+
+    workspace = db.query(Workspace).filter(Workspace.workspace_id == workspace_id).first()
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+
+    is_member = (
+        db.query(WorkspaceMember)
+        .filter(
+            WorkspaceMember.workspace_id == workspace.workspace_id,
+            WorkspaceMember.user_id == user.user_id
+        )
+        .first()
+    )
+    if not is_member:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    rows = (
+        db.query(WorkspaceMember, User)
+        .join(User, User.user_id == WorkspaceMember.user_id)
+        .filter(WorkspaceMember.workspace_id == workspace.workspace_id)
+        .order_by(WorkspaceMember.created_at.asc())
+        .all()
+    )
+
+    return {
+        "members": [
+            {
+                "member_id": str(member.member_id),
+                "user_id": str(member.user_id),
+                "login_id": user.login_id,
+                "email": user.email,
+                "name": user.name,
+                "role": member.role
+            }
+            for member, user in rows
+        ]
+    }
+
+
 @router.post("/{workspace_id}/leave")
 def leave_workspace(
     workspace_id: str,

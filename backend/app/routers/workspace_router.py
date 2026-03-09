@@ -1,9 +1,11 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user_email
+from app.dependencies.auth import get_current_user_id
 from app.enums.meeting_status import MeetingStatus
 from app.models.meeting import Meeting
 from app.models.user import User
@@ -25,11 +27,16 @@ class MeetingCreateRequest(BaseModel):
     title: str
 
 
-def _require_user(db: Session, user_email: str | None) -> User:
-    if not user_email:
+def _require_user(db: Session, token_user_id: str | None) -> User:
+    if not token_user_id:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    user = db.query(User).filter(User.email == user_email).first()
+    try:
+        user_uuid = uuid.UUID(token_user_id)
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    user = db.query(User).filter(User.user_id == user_uuid).first()
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return user
@@ -39,9 +46,9 @@ def _require_user(db: Session, user_email: str | None) -> User:
 def create_workspace(
     body: WorkspaceCreateRequest,
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    user = _require_user(db, user_email)
+    user = _require_user(db, user_id)
 
     workspace = Workspace(name=body.name.strip())
     workspace.owner_id = user.user_id
@@ -66,9 +73,9 @@ def create_workspace(
 @router.get("")
 def get_workspaces(
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    user = _require_user(db, user_email)
+    user = _require_user(db, user_id)
 
     rows = (
         db.query(Workspace, WorkspaceMember.role)
@@ -95,9 +102,9 @@ def invite_workspace_member(
     workspace_id: str,
     body: WorkspaceInviteRequest,
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    _require_user(db, user_email)
+    _require_user(db, user_id)
 
     workspace = db.query(Workspace).filter(Workspace.workspace_id == workspace_id).first()
     if not workspace:
@@ -132,9 +139,9 @@ def invite_workspace_member(
 def leave_workspace(
     workspace_id: str,
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    user = _require_user(db, user_email)
+    user = _require_user(db, user_id)
 
     member = (
         db.query(WorkspaceMember)
@@ -156,9 +163,9 @@ def leave_workspace(
 def delete_workspace(
     workspace_id: str,
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    _require_user(db, user_email)
+    _require_user(db, user_id)
 
     workspace = db.query(Workspace).filter(Workspace.workspace_id == workspace_id).first()
     if not workspace:
@@ -174,9 +181,9 @@ def create_meeting(
     workspace_id: str,
     body: MeetingCreateRequest,
     db: Session = Depends(get_db),
-    user_email: str | None = Depends(get_current_user_email)
+    user_id: str | None = Depends(get_current_user_id)
 ):
-    _require_user(db, user_email)
+    _require_user(db, user_id)
 
     workspace = db.query(Workspace).filter(Workspace.workspace_id == workspace_id).first()
     if not workspace:

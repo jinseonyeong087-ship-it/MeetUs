@@ -23,12 +23,19 @@ def _base64url_decode(data: str) -> bytes:
     return base64.urlsafe_b64decode(data + padding)
 
 
-def create_access_token(user_id: str, email: str, name: str, expires_in_seconds: int = 24 * 3600) -> str:
+def create_access_token(
+    user_id: str,
+    login_id: str,
+    email: str,
+    name: str,
+    expires_in_seconds: int = 24 * 3600
+) -> str:
     secret = os.getenv("JWT_SECRET", "dev-secret")
     header = {"alg": "HS256", "typ": "JWT"}
     payload = {
         "sub": user_id,
         "user_id": user_id,
+        "login_id": login_id,
         "email": email,
         "name": name,
         "iat": int(time.time()),
@@ -53,4 +60,3 @@ def decode_token_payload(token: str) -> dict:
         return json.loads(payload_raw.decode("utf-8"))
     except Exception:
         return {}
-

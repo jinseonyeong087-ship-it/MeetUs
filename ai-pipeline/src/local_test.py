@@ -40,16 +40,13 @@ def run_local_mock_pipeline():
     dummy_s3_uri = "s3://mock-bucket/test-meeting.m4a"
     
     # 2. 파이프라인 흐름(Flow) 재현
-    print("\n1️⃣ 단계: 상태 업데이트 (TRANSCRIBING)")
-    api.update_meeting_status(meeting_id, "TRANSCRIBING")
+    print("\n1️⃣ 단계: 상태 업데이트 (PROCESSING)")
+    api.update_meeting_status(meeting_id, "PROCESSING")
     
     print("\n2️⃣ 단계: STT 음성 추출 (Mock)")
     transcript = stt.process_audio(dummy_s3_uri)
     
-    print("\n3️⃣ 단계: 상태 업데이트 (PROCESSING)")
-    api.update_meeting_status(meeting_id, "PROCESSING")
-    
-    print("\n4️⃣ 단계: 강력한 LLM 요약 및 JSON To-Do 파싱 (진짜 Bedrock Claude 3 통신중...)")
+    print("\n3️⃣ 단계: 강력한 LLM 요약 및 JSON To-Do 파싱 (진짜 Bedrock Claude 3 통신중...)")
     try:
         # 이 부분은 미리 발급된 IAM 권한을 사용하여 진짜 AWS Bedrock 서버와 통신합니다.
         llm_result = llm.process_transcript(transcript)
@@ -60,7 +57,7 @@ def run_local_mock_pipeline():
         }
         todo_data = llm_result.get("todos", [])
         
-        print("\n5️⃣ 단계: 최종 결과 Core API로 전송 (Mock)")
+        print("\n4️⃣ 단계: 최종 결과 Core API로 전송 (Mock)")
         api.submit_ai_result(meeting_id, transcript, summary_data, todo_data)
         
         print("\n========== 🎉 로컬 모의 파이프라인 테스트 성공적으로 통과! ==========")

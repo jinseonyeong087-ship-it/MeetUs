@@ -78,3 +78,12 @@ frontend/.env.*
 *.tfstate
 *.tfstate.*
 crash.log
+
+# Backend Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Python cache
+**/__pycache__/
+**/*.pyc

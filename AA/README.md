@@ -1,6 +1,6 @@
 # AI-Minutes
 
-## 초안
+## 초안 
 <img src="/AA/img/first.png">
 
 ## AA 산출물

@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 5. 소스 코드 복사
 COPY src/ /app/src/
 
-# 6. 환경 변수 설정 (우분투/EKS 환경에서 Python 로깅이 바로바로 출력되게 설정)
+# 6. 환경 변수 설정 (우분투/ECS 환경에서 Python 로깅이 바로바로 출력되게 설정)
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 

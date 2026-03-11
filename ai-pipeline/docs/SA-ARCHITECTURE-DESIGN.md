@@ -34,7 +34,7 @@ ai-pipeline/
     2.  `assignee`, `task`, `due_date` 필드를 가진 담당자별 To-Do 배열을 완벽한 JSON 형식으로 추출.
 
 ### 📡 백엔드 송신: `network/api_client.py`
-*   `api_client.py`: 중간 상태(`#TRANSCRIBING`, `#SUMMARIZING` 등)가 변경되거나, 모든 AI 처리가 완료(`#COMPLETED`)되었을 때 TA(단비)님의 파이썬 Core 서버(`CORE_API_URL`)로 HTTP POST/PUT 요청을 쏴서 DB에 결과가 적재되도록 만드는 우체부 역할입니다.
+*   `api_client.py`: 중간 상태(`#PROCESSING`)가 변경되거나, 모든 AI 처리가 완료(`#COMPLETED`)되었을 때 TA(단비)님의 파이썬 Core 서버로 HTTP POST/PATCH 요청을 쏴서 DB에 결과가 적재되도록 만드는 우체부 역할입니다.
 
 ---
 

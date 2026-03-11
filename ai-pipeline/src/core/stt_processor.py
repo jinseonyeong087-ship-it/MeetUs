@@ -29,7 +29,7 @@ class STTProcessor:
         # 충돌 방지를 위해 UUID를 사용한 고유한 Job 이름 생성
         job_name = f"ai_minutes_job_{uuid.uuid4().hex}"
         
-        print(f"[STT] AWS Transcribe 작업 시작 (Job: {job_name}, URI: {s3_uri})")
+        print(f"[STT] AWS Transcribe Job started (Job: {job_name}, URI: {s3_uri})")
         
         # 1. Transcribe Job 시작
         try:
@@ -40,7 +40,7 @@ class STTProcessor:
                 LanguageCode='ko-KR' # 항상 한국어 회의로 가정
             )
         except Exception as e:
-            print(f"[STT_ERROR] 작업 시작 실패: {e}")
+            print(f"[STT_ERROR] Start failed: {e}")
             raise e
 
         # 2. 작업 완료 대기 (Polling)
@@ -49,13 +49,13 @@ class STTProcessor:
             status = response['TranscriptionJob']['TranscriptionJobStatus']
             
             if status == 'COMPLETED':
-                print(f"[STT] Job '{job_name}' 처리 완료!")
+                print(f"[STT] Job '{job_name}' COMPLETED!")
                 # 완료 시 AWS가 제공하는 결과물(JSON)이 저장된 임시 URL 주소
                 transcript_file_uri = response['TranscriptionJob']['Transcript']['TranscriptFileUri']
                 break
             elif status == 'FAILED':
                 error_msg = response['TranscriptionJob'].get('FailureReason', 'Unknown error')
-                print(f"[STT_ERROR] Job '{job_name}' 실패: {error_msg}")
+                print(f"[STT_ERROR] Job '{job_name}' FAILED: {error_msg}")
                 raise Exception(f"AWS Transcribe failed: {error_msg}")
             
             # 처리 중인 경우 5초 대기 후 다시 확인
@@ -69,8 +69,8 @@ class STTProcessor:
                 # AWS Transcribe 결과 구조에서 문장만 확실하게 뽑아내기
                 transcript_text = data['results']['transcripts'][0]['transcript']
                 
-                print(f"[STT] 텍스트 파싱 성공. (길이: {len(transcript_text)}자)")
+                print(f"[STT] Transcript parsed successfully. (Length: {len(transcript_text)})")
                 return transcript_text
         except Exception as e:
-            print(f"[STT_ERROR] 결과 JSON 파싱 실패: {e}")
+            print(f"[STT_ERROR] JSON parsing failed: {e}")
             raise e

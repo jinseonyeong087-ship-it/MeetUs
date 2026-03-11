@@ -1,11 +1,16 @@
 import sys
+import os
 import time
 import json
 import boto3
-from config import config
-from core.stt_processor import STTProcessor
-from core.llm_processor import LLMProcessor
-from network.api_client import APIClient
+
+# 모듈 경로 인식 버그 방지 (ai-pipeline 폴더를 기준으로 환경 설정)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.config import config
+from src.core.stt_processor import STTProcessor
+from src.core.llm_processor import LLMProcessor
+from src.network.api_client import APIClient
 
 class SQSListener:
     """
@@ -71,6 +76,11 @@ class SQSListener:
             
         except Exception as e:
             print(f"[PIPELINE_ERROR] Fatal error during pipeline execution: {e}")
+            if 'meeting_id' in locals() and meeting_id:
+                try:
+                    self.api.submit_failed_status(meeting_id, str(e))
+                except Exception as api_err:
+                    print(f"[API_ERROR] 잔여 FAILED 통보 중 오류 발생: {api_err}")
             raise e
 
     def start_polling(self):

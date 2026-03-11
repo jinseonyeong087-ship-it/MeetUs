@@ -27,7 +27,7 @@
 - [v] 예외(Exception) 핸들링 정상 동작 여부 모의 데이터로 디버깅
 
 ## 🚀 Phase 5: 인프라 배포 및 통합 연동 테스트 (예정)
-- [v] (TA/AA 협의) S3 버킷 권한 및 정보 확보 완료 (`meetus-audio-storage`), SQS 큐 부분은 아직 발급 대기 중
+- [v] (TA/AA 협의) S3 버킷 권한 및 정보 확보 완료 (`meetus-audio-storage`), SQS 큐 실제 주소(`meetus-process-queue`) 획득 및 `.env` 적용 완료
 - [v] AWS ECS (Fargate) 컨테이너화를 위한 `Dockerfile` 작성 및 도커 이미지(ECR) 빌드 준비
 - [v] 배포 최적화를 위한 `.dockerignore` 및 **(추가) OIDC 인증 및 CodeDeploy 기반 ECS 블루/그린** 배포 스크립트 고도화 완료
 - [ ] 통합 E2E 테스트: 프론트엔드 실제 음성 업로드 -> 코어 API -> SQS -> AI 엔진 -> DB 결과 렌더링까지 전체 핑(Ping) 테스트

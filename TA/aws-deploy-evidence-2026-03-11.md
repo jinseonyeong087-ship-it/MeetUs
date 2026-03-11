@@ -112,3 +112,84 @@ failure_reason
   - `POST /internal/ai/failed` (`reason` 저장)
 - DB 컬럼(`meetings.failure_reason`): 적용 완료
 - SQS 크로스계정 수신 권한: 반영 완료
+
+## 8) GitHub Actions 기반 TA 백엔드 자동 배포 설정 증적
+
+### 8.1 백엔드 워크플로 수정
+
+- 대상 파일: `.github/workflows/backend.yml`
+- 반영 내용:
+  - GitHub Secret 참조명을 `TA_AWS_ROLE_TO_ASSUME`로 변경
+  - ECR Push 이후 ECS 서비스 강제 새 배포 단계 추가
+  - `aws ecs wait services-stable` 단계 추가
+- 배포 대상:
+  - ECS Cluster: `ai-minutes-cluster`
+  - ECS Service: `ai-minutes-core-api-service`
+
+### 8.2 GitHub OIDC용 IAM Role 생성
+
+- 역할명: `GitHubActions-TA-BackendDeploy`
+- ARN:
+  - `arn:aws:iam::692681389373:role/GitHubActions-TA-BackendDeploy`
+- 용도:
+  - GitHub Actions에서 OIDC 기반으로 AWS 인증 후 ECR Push 및 ECS 배포 수행
+
+### 8.3 GitHub OIDC 신뢰 정책 구성
+
+- 공급자:
+  - `token.actions.githubusercontent.com`
+- Audience:
+  - `sts.amazonaws.com`
+- GitHub 저장소 조건:
+  - Organization: `Project-AWS-AI-Minutes`
+  - Repository: `AI-Minutes`
+  - Branch: `main`
+
+### 8.4 IAM 권한 정책 생성 및 연결
+
+- 정책명: `TA-BackendDeployPolicy`
+- 역할 연결 대상:
+  - `GitHubActions-TA-BackendDeploy`
+- 허용 범위:
+  - `ecr:GetAuthorizationToken`
+  - `ecr:BatchCheckLayerAvailability`
+  - `ecr:CompleteLayerUpload`
+  - `ecr:DescribeRepositories`
+  - `ecr:InitiateLayerUpload`
+  - `ecr:PutImage`
+  - `ecr:UploadLayerPart`
+  - `ecs:UpdateService`
+  - `ecs:DescribeServices`
+
+### 8.5 GitHub Repository Secret 생성
+
+- 위치: GitHub Repository -> `Settings` -> `Secrets and variables` -> `Actions`
+- Secret 이름:
+  - `TA_AWS_ROLE_TO_ASSUME`
+- Secret 값:
+  - `arn:aws:iam::692681389373:role/GitHubActions-TA-BackendDeploy`
+
+### 8.6 GitHub Actions 실행 확인
+
+- 워크플로명: `backend-ci-cd`
+- 실행 트리거:
+  - `main` 브랜치 push
+  - `backend/**`
+  - `.github/workflows/backend.yml`
+- 실행 흐름:
+  - OIDC 인증
+  - ECR 로그인
+  - Docker 빌드
+  - ECR Push
+  - ECS 강제 재배포
+  - 서비스 안정화 대기
+
+## 9) 최종 상태 갱신 (2026-03-11 추가 반영)
+
+- ECS 수동 배포: 정상
+- GitHub Actions 백엔드 자동 배포 경로: 구성 완료
+- GitHub OIDC IAM Role: 생성 완료
+- GitHub Secret(`TA_AWS_ROLE_TO_ASSUME`): 생성 완료
+- TA 백엔드 배포 구조:
+  - 수동 배포 가능
+  - `main` 반영 시 자동 재배포 가능

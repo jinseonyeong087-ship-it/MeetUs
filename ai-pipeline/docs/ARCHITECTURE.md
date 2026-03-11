@@ -8,12 +8,12 @@ AI 처리(STT 및 LLM)는 짧게는 수십 초에서 길게는 수 분이 걸리
 ### 🔄 데이터 파이프라인 흐름
 1. **[FE ➡️ S3]** 클라이언트(AA)가 회의 음성 파일을 AWS S3 버킷에 직접 업로드 (Presigned URL 활용 권장, **최대 30MB, m4a 포맷 한정**).
 2. **[FE ➡️ Core]** 업로드 완료 후, 클라이언트는 Core API(TA)를 호출하여 파일의 S3 URL 및 메타데이터를 전달.
-3. **[Core DB & SQS]** TA 서버는 DB에 회의 기본 정보(상태: `UPLOADED`)를 저장하고, AWS SQS에 AI 작업 지시 메시지(JSON, 파일 URL 포함)를 발행.
-4. **[AI 서버 폴링]** SA 파이썬 엔진은 백그라운드에서 주기적으로 SQS 큐를 확인(Polling)하다가 메시지를 수신 (실패 시 **최대 3회 자동 재처리**).
-5. **[AI Processing]** 
-   - AWS Transcribe API를 호출하여 STT 변환 진행 (상태: `TRANSCRIBING`).
-   - 변환된 원본 텍스트를 LLM(Amazon Bedrock Claude 3)에 전달하여 전체 요약(5~7줄) 및 결정사항, 담당자별 To-Do(JSON) 데이터를 한 번에 추출 (상태: `PROCESSING`).
-6. **[AI ➡️ Core]** AI 처리가 완료되면 SA 엔진이 Core API(웹훅 형태)를 호출하여 DB의 최종 상태(`COMPLETED`) 및 결과 데이터 분리 업데이트. 에러가 3회 누적되면 큐에서 제거 후 최종 `FAILED` 처리.
+3. **[Core DB & SQS]** TA 서버는 DB에 회의 정보(상태: `CREATED -> UPLOADED` 전이)를 저장하고, AWS SQS에 AI 작업 지시 메시지를 발행.
+4. **[AI 서버 폴링]** SA 파이썬 엔진은 백그라운드에서 SQS를 폴링하다가 메시지를 수신 (상태: `PROCESSING`으로 자동 전이 확인).
+5. **[AI Processing]**
+   - SQS 메시지를 수신하여 AWS Transcribe 및 Bedrock(Claude 3) 파이프라인 가동.
+   - 음성 텍스트 변환, 요약, 결정사항, To-Do 추출을 수행.
+6. **[AI ➡️ Core API]** AI 처리가 완료되면 SA 엔진이 Core API(웹훅 형태)를 호출하여 결과 데이터(JSON)를 전송합니다. (Core API가 DB에 데이터를 적재하고 `COMPLETED`로 업데이트). 에러가 3회 누적되면 Dead Letter Queue로 이동 후 최종 `FAILED` 처리.
 
 ## 2. 데이터베이스 바운더리 (DB Boundaries)
 데이터의 무결성과 관심사의 분리(Separation of Concerns)를 위해, AI 결과물과 관련된 테이블은 크게 4가지로 분리하여 설계합니다. 
@@ -29,7 +29,7 @@ AI 처리(STT 및 LLM)는 짧게는 수십 초에서 길게는 수 분이 걸리
 * **Frontend (AA):** Vanilla JS / Nginx (상태값 기반 렌더링)
 * **Core API (TA):** Python (FastAPI) (인증, 회의/상태 관리, Presigned URL 발급, SQS Producer)
 * **AI Processing Service (SA):** Python 3.12 (Worker/FastAPI, Boto3, Amazon Bedrock 연동, SQS Consumer, 실패 3회 재처리 로직)
-* **Infrastructure:** AWS S3 (오디오), AWS SQS (큐), AWS Transcribe (음성), AWS EKS (단일 운영 배포 환경, 블루/그린 적용), AWS ECR (이미지)
+* **Infrastructure:** AWS S3 (오디오), AWS SQS (큐), AWS Transcribe (음성), AWS ECS (단일 운영 배포 환경, 블루/그린 적용), AWS ECR (이미지)
 
 ---
 
@@ -87,19 +87,18 @@ sequenceDiagram
 
     %% 4단계: AI 엔진 작업
     SQS-->>AI: 메시지 낚아챔 (작업 시작)
-    AI->>DB: 상태 갱신 [TRANSCRIBING]
+    Note over AI: 상태는 이미 [PROCESSING] <br/>(Back-end 자동 전이)
     AI->>STT: 음성을 텍스트 변환 요청
     STT-->>AI: 원본 텍스트 반환
-    AI->>DB: 상태 갱신 [SUMMARIZING]
-    AI->>LLM: 텍스트 핵심 요약 요청
-    LLM-->>AI: 요약 결과 반환
-    AI->>DB: 상태 갱신 [TODO_EXTRACTING]
-    AI->>LLM: To-Do 추출 요청 (JSON)
-    LLM-->>AI: 정형화 데이터 반환
+    AI->>LLM: 요약 및 To-Do 추출 요청
+    LLM-->>AI: 정형화 데이터 반환 (JSON)
+    
     %% 5단계: 마무리
-    AI->>Core: 최종 처리 결과 전달
+    AI->>Core: 최종 처리 결과 전달 (Webhook)
     Core->>DB: 결과 적재 및 [COMPLETED]
-    Client->>Core: 최종 결과 데이터 요청
-    Core-->>Client: 요약 & To-Do 반환
+    Client->>Core: 최종 데이터 로드 확인
+    Core->>DB: 데이터 조회
+    DB-->>Core: 취합된 결과 반환
+    Core-->>Client: 요약 & To-Do 최종 응답
     Note over Client: 대시보드 및 To-Do<br/>카드 UI 최종 렌더링
 ```

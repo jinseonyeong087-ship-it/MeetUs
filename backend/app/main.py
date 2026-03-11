@@ -109,3 +109,4 @@ app.include_router(upload_router.router)
 @app.get("/")
 def root():
     return {"message": "AI Minutes API"}
+

@@ -1,22 +1,28 @@
 name: backend-ci-cd
 
 on:
+  # main 브랜치에 backend 관련 변경이 반영되면 자동 실행
   push:
     branches: ["main"]
     paths:
       - "backend/**"
       - ".github/workflows/backend.yml"
+  # GitHub Actions 화면에서 수동 실행 가능
   workflow_dispatch:
 
 env:
+  # 공통 배포 대상 정보
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: ai-minutes-core-api
+  ECS_CLUSTER: ai-minutes-cluster
+  ECS_SERVICE: ai-minutes-core-api-service
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   docker-build-and-push:
     runs-on: ubuntu-latest
     permissions:
+      # AWS OIDC 인증에 필요
       id-token: write
       contents: read
 
@@ -27,13 +33,14 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.TA_AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # 현재 커밋 SHA 태그와 latest 태그를 함께 생성
       - name: Build Docker image
         run: |
           docker build \
@@ -41,6 +48,7 @@ jobs:
             -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest \
             ./backend
 
+      # ECR에 버전 태그와 latest 태그를 모두 푸시
       - name: Push Docker image to ECR
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
@@ -50,3 +58,19 @@ jobs:
         run: |
           echo "Pushed image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
 
+      - name: Trigger ECS deployment
+        run: |
+          # 서비스가 latest 이미지를 다시 당겨가도록 강제 새 배포
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for ECS service stability
+        run: |
+          # ECS 서비스가 정상 상태가 될 때까지 대기
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }}

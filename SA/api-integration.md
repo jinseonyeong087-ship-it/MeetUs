@@ -20,7 +20,8 @@
 - 따라서 SA 엔진은 별도의 상태 업데이트 API 호출 없이 즉시 처리에 들어갑니다.
 
 ## 4. 최종 결과 적재: Core API Webhook 호출
-- AI 분석이 완료되면 SA 엔진이 Core API의 웹훅(`POST /internal/ai/result`)을 호출하여 최종 결과 데이터(JSON)를 전송합니다. 
+- AI 분석이 성공적으로 완료되면 SA 엔진이 Core API의 웹훅(`POST /internal/ai/result`)을 호출하여 최종 결과 데이터(JSON)를 전송합니다. 
+- 통신 대상(Base URL)은 백엔드의 실 배포 주소인 `http://meetus-alb-858165370.ap-northeast-2.elb.amazonaws.com` 을 사용합니다.
 
 ### 4.1 발송 데이터 매핑
 1. **`transcripts`**: `full_text` 필드에 STT 원본 텍스트 전달.
@@ -30,7 +31,13 @@
 
 ### 4.2 최종 데이터 구조 (JSON)
 - LLM(Bedrock)으로부터 받는 내부 규격은 동일합니다.
+- `todos` 배열 내의 기한은 `due_date` 필드명에 `YYYY-MM-DD` 문자열 포맷으로 전달됩니다.
 
-## 5. 핵심 통신 규약
+## 5. 치명적 예외 처리 (FAILED 웹훅)
+- SQS에서 메시지를 받아 파이프라인 처리를 하던 중 STT 변환 실패, 타임아웃, 포맷 에러 등의 치명적 예외(Exception)가 발생할 경우, SA 엔진은 즉시 `POST /internal/ai/failed` 웹훅을 호출합니다.
+- **Payload 예시**: `{"meeting_id": "req-uuid", "reason": "STT Timeout Exception"}`
+- 이를 수신한 TA 서버는 DB의 회의 상태를 `FAILED`로 갱신하고 `reason`을 저장하여 무한 로딩 표류 현상을 방지합니다.
+
+## 6. 핵심 통신 규약
 * **Timeout 정책:** 백엔드 발송 시 모든 요청은 `timeout=10` 제한을 가집니다. 발송 장애 시 즉시 에러가 떨어지며 SQS 메시지 재처리(Retry) 루프를 타게 됩니다.
 * **Header 토큰:** 추후 TA쪽에서 방화벽(Auth) 설정을 걸 경우, `.env`에 정의된 `INTERNAL_AUTH_TOKEN`을 Header `Authorization` 에 실어서 전달하도록 확장 설계되어 있습니다.

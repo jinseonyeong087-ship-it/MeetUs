@@ -28,8 +28,9 @@
 - `api_client.py`: 추출된 최종 데이터를 백엔드 Core API로 송신하는 통합 통신 모듈.
 
 ## 5) 테스트 및 배포 내역
-- [x] 목업 데이터(`local_test.py`)를 활용한 STT/LLM 결과 추출 및 JSON 형식 유지 1차 검증 완료.
-- [x] OIDC(OpenID Connect)를 도입하여 인증 키드롭 없이 GitHub Actions 파이프라인(`deploy-sa.yml`) 배포 자동화 완료.
+- [v] 목업 데이터(`local_test.py`)를 활용한 STT/LLM 결과 추출 및 JSON 형식 유지 1차 검증 완료.
+- [v] OIDC(OpenID Connect)를 도입하여 인증 키드롭 없이 GitHub Actions 파이프라인(`deploy-sa.yml`) 배포 자동화 완료.
+- [v] **[2026-03-11]** TA 백엔드(ALB) 주소 통신 결합 완료 및 FAILED 장애 통보 웹훅(`/internal/ai/failed`) 추가 개발 검증 통과.
 
 ## 6) 증적 목록 (상세 문서 연결)
 - [SA 파이프라인 시스템 설계 (sa-system-design.md)](./sa-system-design.md)

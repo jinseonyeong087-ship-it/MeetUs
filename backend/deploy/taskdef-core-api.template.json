@@ -19,12 +19,21 @@
         }
       ],
       "environment": [
-        { "name": "postgresql://postgres:meetus321@meetus.ct0qca8oo22c.ap-northeast-2.rds.amazonaws.com:5432/meetus", "value": "postgresql://postgres:meetus321@meetus.ct0qca8oo22c.ap-northeast-2.rds.amazonaws.com:5432/meetus" },
+        {
+          "name": "DATABASE_URL",
+          "value": "postgresql://postgres:meetus321@meetus.ct0qca8oo22c.ap-northeast-2.rds.amazonaws.com:5432/meetus"
+        },
         { "name": "AWS_REGION", "value": "ap-northeast-2" },
         { "name": "S3_BUCKET", "value": "meetus-audio-storage" },
-        { "name": "SQS_QUEUE_URL", "value": "https://sqs.ap-northeast-2.amazonaws.com/692681389373/meetus-process-queue" },
-        { "name": "JWT_SECRET", "value": "<JWT_SECRET>" },
-        { "name": "CORS_ALLOW_ORIGINS", "value": "http://localhost:8080,https://<FRONTEND_DOMAIN>" }
+        {
+          "name": "SQS_QUEUE_URL",
+          "value": "https://sqs.ap-northeast-2.amazonaws.com/692681389373/meetus-process-queue"
+        },
+        { "name": "JWT_SECRET", "value": "h7Vn2Qp9Lx4mZt8Rk3sWc6Yd1Bf0Nj5U" },
+        {
+          "name": "CORS_ALLOW_ORIGINS",
+          "value": "http://localhost:8080,http://meetus-alb-278466579.ap-northeast-2.elb.amazonaws.com"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -47,4 +56,3 @@
     }
   ]
 }
-

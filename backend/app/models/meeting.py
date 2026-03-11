@@ -25,5 +25,6 @@ class Meeting(Base):
     )
 
     audio_s3_key = Column(Text)
+    failure_reason = Column(Text)
 
     created_at = Column(TIMESTAMP, server_default=func.now())

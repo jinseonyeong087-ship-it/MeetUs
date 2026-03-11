@@ -61,6 +61,7 @@ def upload_complete(
     # 전달받은 S3 키 업데이트 (안전장치)
     meeting.audio_s3_key = body.audio_s3_key
     meeting.status = MeetingStatus.UPLOADED
+    meeting.failure_reason = None
     db.commit()
     return {"status": "UPLOADED"}
 
@@ -151,6 +152,7 @@ def process_meeting(meeting_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Meeting not found")
         
     meeting.status = MeetingStatus.PROCESSING
+    meeting.failure_reason = None
     db.commit()
     
     # TODO: SQS 메시지 전송 로직 추가 필요
@@ -165,6 +167,7 @@ def retry_meeting(meeting_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Meeting not found")
         
     meeting.status = MeetingStatus.PROCESSING
+    meeting.failure_reason = None
     db.commit()
     
     # TODO: SQS 메시지 전송 로직 추가 필요

@@ -303,6 +303,7 @@ GET /meetings?workspaceId=123&status=COMPLETED&page=0&size=10
       "meeting_id": "uuid",
       "title": "주간 회의",
       "status": "COMPLETED",
+      "failure_reason": null,
       "created_at": "2026-03-05"
     }
   ],
@@ -321,7 +322,8 @@ GET /meetings?workspaceId=123&status=COMPLETED&page=0&size=10
   "meeting": {
     "meeting_id": "uuid",
     "title": "주간 회의",
-    "status": "COMPLETED"
+    "status": "COMPLETED",
+    "failure_reason": null
   },
   "summary": "회의 요약...",
   "decisions": "결정사항...",
@@ -331,7 +333,8 @@ GET /meetings?workspaceId=123&status=COMPLETED&page=0&size=10
       "todo_id": "uuid",
       "task": "보고서 작성",
       "assignee": "홍길동",
-      "status": "PENDING"
+      "status": "PENDING",
+      "due_date": "2026-03-31"
     }
   ]
 }
@@ -423,7 +426,8 @@ AI Worker가 호출하는 내부 API
   "todos": [
     {
       "task": "보고서 작성",
-      "assignee": "홍길동"
+      "assignee": "홍길동",
+      "due_date": "2026-03-31"
     }
   ]
 }
@@ -441,6 +445,38 @@ meeting.status = COMPLETED
 ```json
 {
   "status": "saved"
+}
+```
+
+---
+
+### 1️⃣9️⃣ AI 실패 전달 API
+
+> **POST** /internal/ai/failed
+
+AI Worker가 처리 실패(재시도 초과) 시 호출하는 내부 API
+
+### Request
+
+```json
+{
+  "meeting_id": "uuid",
+  "reason": "STT timeout (optional)"
+}
+```
+
+### Core API 처리
+
+```
+meeting.status = FAILED
+meeting.failure_reason = reason
+```
+
+### Response
+
+```json
+{
+  "status": "failed"
 }
 ```
 
@@ -464,6 +500,10 @@ meeting.status = COMPLETED
 11. Core API → DB 저장
 
 12. Frontend → GET /meetings/{id}
+
+※ 실패 시
+10-1. AI Worker → POST /internal/ai/failed
+10-2. Core API → meeting.status = FAILED
 
 ### 📌 장점 (왜 구조를 사용하는 이유)
 
@@ -495,6 +535,7 @@ meeting.status = COMPLETED
 | To-Do 조회             | GET /todos                            |
 | To-Do 상태 변경        | PATCH /todos/{id}                     |
 | AI 결과 저장           | POST /internal/ai/result              |
+| AI 실패 저장           | POST /internal/ai/failed              |
 
 ---
 

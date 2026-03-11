@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from datetime import date
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/internal", tags=["internal"])
 class AiTodoPayload(BaseModel):
     task: str
     assignee: str | None = None
+    due_date: date | None = None
 
 
 class AiResultRequest(BaseModel):
@@ -79,11 +81,31 @@ def save_ai_result(body: AiResultRequest, db: Session = Depends(get_db)):
                 meeting_id=meeting.meeting_id,
                 assignee_member_id=assignee_member_id,
                 task=todo_payload.task,
+                due_date=todo_payload.due_date,
                 status=TodoStatus.PENDING
             )
         )
 
     meeting.status = MeetingStatus.COMPLETED
+    meeting.failure_reason = None
     db.commit()
 
     return {"status": "saved"}
+
+
+class AiFailedRequest(BaseModel):
+    meeting_id: str
+    reason: str | None = None
+
+
+@router.post("/ai/failed")
+def mark_ai_failed(body: AiFailedRequest, db: Session = Depends(get_db)):
+    meeting = db.query(Meeting).filter(Meeting.meeting_id == body.meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+    meeting.status = MeetingStatus.FAILED
+    meeting.failure_reason = body.reason
+    db.commit()
+
+    return {"status": "failed"}

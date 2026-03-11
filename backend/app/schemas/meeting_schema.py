@@ -17,6 +17,7 @@ class MeetingResponse(BaseModel):
     workspace_id: UUID
     title: str
     status: str
+    failure_reason: Optional[str] = None
     created_at: datetime
 
     class Config:

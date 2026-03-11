@@ -5,6 +5,13 @@ on:
     branches: ["main"]
     paths:
       - "frontend/**"
+      - "frontend/deploy/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "frontend/**"
+      - "frontend/deploy/**"
       - ".github/workflows/frontend.yml"
   workflow_dispatch:
 
@@ -12,9 +19,29 @@ env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: ai-minutes-frontend
   IMAGE_TAG: ${{ github.sha }}
+  TASKDEF_TEMPLATE: frontend/deploy/taskdef-frontend.template.json
+  APPSPEC_TEMPLATE: frontend/deploy/appspec-frontend.yaml
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  docker-build-and-push:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build frontend Docker image
+        run: docker build -t ai-minutes-frontend:test ./frontend
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -35,17 +62,108 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+            -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest \
             ./frontend
 
       - name: Push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Validate required deployment configuration
+        env:
+          ECS_TASK_FAMILY: ${{ vars.FRONTEND_ECS_TASK_FAMILY }}
+          ECS_EXECUTION_ROLE_ARN: ${{ vars.FRONTEND_ECS_EXECUTION_ROLE_ARN }}
+          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
+          FRONTEND_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL }}
+          FRONTEND_LOG_GROUP: ${{ vars.FRONTEND_LOG_GROUP }}
+          CODEDEPLOY_APP_NAME: ${{ vars.FRONTEND_CODEDEPLOY_APP_NAME }}
+          CODEDEPLOY_DEPLOYMENT_GROUP: ${{ vars.FRONTEND_CODEDEPLOY_DEPLOYMENT_GROUP }}
+        run: |
+          missing=0
+          for key in ECS_TASK_FAMILY ECS_EXECUTION_ROLE_ARN ECS_CONTAINER_NAME FRONTEND_API_BASE_URL FRONTEND_LOG_GROUP CODEDEPLOY_APP_NAME CODEDEPLOY_DEPLOYMENT_GROUP; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required GitHub Actions variable: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Render task definition
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECS_TASK_FAMILY: ${{ vars.FRONTEND_ECS_TASK_FAMILY }}
+          ECS_EXECUTION_ROLE_ARN: ${{ vars.FRONTEND_ECS_EXECUTION_ROLE_ARN }}
+          ECS_TASK_ROLE_ARN: ${{ vars.FRONTEND_ECS_TASK_ROLE_ARN }}
+          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
+          FRONTEND_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL }}
+          FRONTEND_LOG_GROUP: ${{ vars.FRONTEND_LOG_GROUP }}
+        run: |
+          jq \
+            --arg family "$ECS_TASK_FAMILY" \
+            --arg executionRoleArn "$ECS_EXECUTION_ROLE_ARN" \
+            --arg taskRoleArn "$ECS_TASK_ROLE_ARN" \
+            --arg containerName "$ECS_CONTAINER_NAME" \
+            --arg image "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}" \
+            --arg apiBaseUrl "$FRONTEND_API_BASE_URL" \
+            --arg logGroup "$FRONTEND_LOG_GROUP" \
+            --arg awsRegion "${{ env.AWS_REGION }}" \
+            '
+            .family = $family
+            | .executionRoleArn = $executionRoleArn
+            | .containerDefinitions[0].name = $containerName
+            | .containerDefinitions[0].image = $image
+            | (.containerDefinitions[0].environment[] | select(.name == "API_BASE_URL") | .value) = $apiBaseUrl
+            | .containerDefinitions[0].logConfiguration.options["awslogs-group"] = $logGroup
+            | .containerDefinitions[0].logConfiguration.options["awslogs-region"] = $awsRegion
+            ' \
+            "${{ env.TASKDEF_TEMPLATE }}" > taskdef-frontend.json
+          if [ -n "$ECS_TASK_ROLE_ARN" ]; then
+            jq --arg taskRoleArn "$ECS_TASK_ROLE_ARN" '.taskRoleArn = $taskRoleArn' taskdef-frontend.json > taskdef-frontend.tmp
+          else
+            jq 'del(.taskRoleArn)' taskdef-frontend.json > taskdef-frontend.tmp
+          fi
+          mv taskdef-frontend.tmp taskdef-frontend.json
+
+      - name: Register task definition
+        id: register-taskdef
+        run: |
+          task_definition_arn=$(aws ecs register-task-definition \
+            --cli-input-json file://taskdef-frontend.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "task_definition_arn=$task_definition_arn" >> "$GITHUB_OUTPUT"
+
+      - name: Render AppSpec
+        env:
+          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
+        run: |
+          sed -e "s|<TASK_DEFINITION>|${{ steps.register-taskdef.outputs.task_definition_arn }}|g" \
+              -e "s|<CONTAINER_NAME>|$ECS_CONTAINER_NAME|g" \
+            "${{ env.APPSPEC_TEMPLATE }}" > appspec-frontend.yaml
+
+      - name: Create CodeDeploy deployment
+        env:
+          CODEDEPLOY_APP_NAME: ${{ vars.FRONTEND_CODEDEPLOY_APP_NAME }}
+          CODEDEPLOY_DEPLOYMENT_GROUP: ${{ vars.FRONTEND_CODEDEPLOY_DEPLOYMENT_GROUP }}
+        run: |
+          jq -Rs '{revisionType:"AppSpecContent", appSpecContent:{content:.}}' appspec-frontend.yaml > codedeploy-revision.json
+          aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_APP_NAME" \
+            --deployment-group-name "$CODEDEPLOY_DEPLOYMENT_GROUP" \
+            --revision file://codedeploy-revision.json
 
       - name: Summary
         run: |
           echo "Pushed image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          echo "Registered task definition: ${{ steps.register-taskdef.outputs.task_definition_arn }}"
+          echo "Started CodeDeploy deployment for frontend"

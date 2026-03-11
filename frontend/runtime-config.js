@@ -1,1 +1,1 @@
-window.__API_BASE_URL = 'http://127.0.0.1:8000';
+window.__API_BASE_URL = 'http://meetus-alb-858165370.ap-northeast-2.elb.amazonaws.com';

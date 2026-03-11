@@ -39,6 +39,28 @@
 
 ---
 
+## ☁️ AWS 인프라 리소스 생성 및 설정 이력 (Infrastructure Track Record)
+본 프로젝트 진행 과정에서 SA 파트(주환님)가 직접 AWS 콘솔 및 CLI를 통해 구축 완료한 클라우드 인프라 자산 목록입니다.
+
+### [2026-03] AWS IAM (보안 및 권한 제어)
+- **OIDC Identity Provider 등록:** GitHub Actions의 안전한 CI/CD 무중단 배포를 위해 IAM에 GitHub OIDC 공급자 세팅 완료.
+- **`ai-minutes-sa-role` (IAM Role) 생성:** OIDC 인증 시 부여받을 수 있는 임시 자격 증명용 AWS Role 생성 (신뢰 관계 설정 포함).
+- **최소 권한(Least Privilege) 인라인 정책 연결:** 트랜스크립트용 S3 읽기, 파이프라인용 SQS 읽기/삭제, 이미지 배포용 ECR 푸시 등 SA 구동에만 필요한 권한을 묶은 커스텀 정책(`iam_policy_least_privilege.json`) 부여 완료. 기존의 `PowerUserAccess` 등 광범위한 위험 권한 전면 제거.
+
+### [2026-03] AWS ECR (컨테이너 레지스트리)
+- **`ai-minutes-sa` 리포지토리 생성:** (AWS Account ID: `818466672325`, Region: `ap-northeast-2`)
+  - SA 파트 전용 AI 엔진 Docker 이미지를 저장하기 위한 프라이빗 보관소 생성 완료.
+  - GitHub Actions 파이프라인(`.github/workflows/deploy-sa.yml`)과 OIDC로 연동하여 자동 빌드 및 ECR 푸시 정상 동작 확인.
+
+### [2026-03] 아키텍처 의사결정: EKS 기반 오버엔지니어링 해소
+- **EKS 백지화 및 ECS (Fargate) 전면 도입:** 초기 설계된 무거운 쿠버네티스(EKS) 인프라를 전면 취소하고, 서버리스 기반의 비용 효율적이고 관리 포인트가 적은 **AWS ECS (Fargate)** 아키텍처로 인프라 방향성을 재정비함. (전사 문서 통일 완료)
+
+### [2026-03] 백엔드 연동 인프라 주소 확보 및 적용
+- **S3 Bucket (`meetus-audio-storage`):** 타 파트 오디오 원본 저장소 접근 스펙 `.env` 반영.
+- **SQS Queue (`meetus-process-queue`):** 백엔드가 발행할 AI 분석 요청 메시지 수신용 실제 SQS 엔드포인트 획득 및 `config.py` 이식 완료 (Long Polling 수신 대기 체제 가동 중).
+
+---
+
 ## 🔄 문서 변경 이력 (Audit Trail)
 
 ### ➕ [추가: ADDITION]

@@ -73,3 +73,19 @@ class APIClient:
         
         print(f"[API] 최종 AI 분석 결과 전송 (Meeting: {meeting_id})")
         return self._send_request(endpoint, "POST", payload)
+
+    def submit_failed_status(self, meeting_id: str, reason: str):
+        """
+        AI 처리 중 치명적 오류 발생 시 Core API의 실패 웹훅을 호출합니다.
+        
+        :param meeting_id: 실패한 회의 식별자
+        :param reason: 실패 사유 (예외 메시지 등)
+        """
+        endpoint = "/internal/ai/failed"
+        payload = {
+            "meeting_id": meeting_id,
+            "reason": reason
+        }
+        
+        print(f"[API] 실패 상태 통보 송신: {meeting_id} (Reason: {reason})")
+        return self._send_request(endpoint, "POST", payload)

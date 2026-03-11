@@ -21,6 +21,15 @@ env:
   IMAGE_TAG: ${{ github.sha }}
   TASKDEF_TEMPLATE: frontend/deploy/taskdef-frontend.template.json
   APPSPEC_TEMPLATE: frontend/deploy/appspec-frontend.yaml
+  AWS_ACCOUNT_ID: "712517669691"
+  ECS_TASK_FAMILY: meetus-frontend-task
+  ECS_EXECUTION_ROLE_ARN: arn:aws:iam::712517669691:role/ecsTaskExecutionRole
+  ECS_TASK_ROLE_ARN: ""
+  ECS_CONTAINER_NAME: frontend
+  FRONTEND_API_BASE_URL: http://meetus-alb-858165370.ap-northeast-2.elb.amazonaws.com
+  FRONTEND_LOG_GROUP: /ecs/meetus-frontend
+  CODEDEPLOY_APP_NAME: meetus-frontend-codedeploy-app
+  CODEDEPLOY_DEPLOYMENT_GROUP: meetus-frontend-deployment-group
 
 concurrency:
   group: frontend-${{ github.ref }}
@@ -54,7 +63,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AA_AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -78,14 +87,6 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Validate required deployment configuration
-        env:
-          ECS_TASK_FAMILY: ${{ vars.FRONTEND_ECS_TASK_FAMILY }}
-          ECS_EXECUTION_ROLE_ARN: ${{ vars.FRONTEND_ECS_EXECUTION_ROLE_ARN }}
-          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
-          FRONTEND_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL }}
-          FRONTEND_LOG_GROUP: ${{ vars.FRONTEND_LOG_GROUP }}
-          CODEDEPLOY_APP_NAME: ${{ vars.FRONTEND_CODEDEPLOY_APP_NAME }}
-          CODEDEPLOY_DEPLOYMENT_GROUP: ${{ vars.FRONTEND_CODEDEPLOY_DEPLOYMENT_GROUP }}
         run: |
           missing=0
           for key in ECS_TASK_FAMILY ECS_EXECUTION_ROLE_ARN ECS_CONTAINER_NAME FRONTEND_API_BASE_URL FRONTEND_LOG_GROUP CODEDEPLOY_APP_NAME CODEDEPLOY_DEPLOYMENT_GROUP; do
@@ -101,12 +102,6 @@ jobs:
       - name: Render task definition
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECS_TASK_FAMILY: ${{ vars.FRONTEND_ECS_TASK_FAMILY }}
-          ECS_EXECUTION_ROLE_ARN: ${{ vars.FRONTEND_ECS_EXECUTION_ROLE_ARN }}
-          ECS_TASK_ROLE_ARN: ${{ vars.FRONTEND_ECS_TASK_ROLE_ARN }}
-          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
-          FRONTEND_API_BASE_URL: ${{ vars.FRONTEND_API_BASE_URL }}
-          FRONTEND_LOG_GROUP: ${{ vars.FRONTEND_LOG_GROUP }}
         run: |
           jq \
             --arg family "$ECS_TASK_FAMILY" \
@@ -144,17 +139,12 @@ jobs:
           echo "task_definition_arn=$task_definition_arn" >> "$GITHUB_OUTPUT"
 
       - name: Render AppSpec
-        env:
-          ECS_CONTAINER_NAME: ${{ vars.FRONTEND_ECS_CONTAINER_NAME }}
         run: |
           sed -e "s|<TASK_DEFINITION>|${{ steps.register-taskdef.outputs.task_definition_arn }}|g" \
               -e "s|<CONTAINER_NAME>|$ECS_CONTAINER_NAME|g" \
             "${{ env.APPSPEC_TEMPLATE }}" > appspec-frontend.yaml
 
       - name: Create CodeDeploy deployment
-        env:
-          CODEDEPLOY_APP_NAME: ${{ vars.FRONTEND_CODEDEPLOY_APP_NAME }}
-          CODEDEPLOY_DEPLOYMENT_GROUP: ${{ vars.FRONTEND_CODEDEPLOY_DEPLOYMENT_GROUP }}
         run: |
           jq -Rs '{revisionType:"AppSpecContent", appSpecContent:{content:.}}' appspec-frontend.yaml > codedeploy-revision.json
           aws deploy create-deployment \

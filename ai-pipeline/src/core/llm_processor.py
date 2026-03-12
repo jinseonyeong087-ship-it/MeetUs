@@ -11,9 +11,7 @@ class LLMProcessor:
         # Bedrock Runtime 클라이언트 생성
         self.bedrock_runtime = boto3.client(
             service_name='bedrock-runtime',
-            region_name=config.AWS_REGION,
-            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
+            region_name=config.AWS_REGION
         )
         
         # 가장 최신의 고성능 모델이자 On-Demand가 지원되는 Claude 3.5 Sonnet 사용

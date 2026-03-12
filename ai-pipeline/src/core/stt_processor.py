@@ -14,9 +14,7 @@ class STTProcessor:
         # config.py를 통해 로드된 환경변수 적용
         self.transcribe_client = boto3.client(
             'transcribe',
-            region_name=config.AWS_REGION,
-            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
+            region_name=config.AWS_REGION
         )
         
     def process_audio(self, s3_uri: str) -> str:

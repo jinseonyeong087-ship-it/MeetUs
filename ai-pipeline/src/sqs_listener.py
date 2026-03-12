@@ -23,9 +23,7 @@ class SQSListener:
         # boto3 sqs 클라이언트 생성
         self.sqs = boto3.client(
             'sqs',
-            region_name=config.AWS_REGION,
-            aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY
+            region_name=config.AWS_REGION
         )
         
         # 환경변수(.env)에서 SQS 큐 URL 로드
@@ -117,7 +115,13 @@ class SQSListener:
                             ReceiptHandle=receipt_handle
                         )
                     except Exception as e:
-                        print(f"[SQS_RETRY] {e} -> Processing failed. Leaving message in queue for retry.")
+                        # 무한 루프 방지: 백엔드에 '실패' 보고가 성공했다면 SQS에서 메시지를 제거합니다.
+                        # (ID 오타 등으로 보고조차 실패한 경우는 재시도하도록 둡니다.)
+                        print(f"[SQS_FAILURE] {e} -> Processing failed. Cleaning up message to prevent infinite retry.")
+                        self.sqs.delete_message(
+                            QueueUrl=self.queue_url,
+                            ReceiptHandle=receipt_handle
+                        )
                         
             except KeyboardInterrupt:
                 print("[SQS] Termination signal received. Stopping listener...")

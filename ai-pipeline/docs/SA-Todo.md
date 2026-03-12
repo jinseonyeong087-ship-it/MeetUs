@@ -23,11 +23,11 @@
 
 ## 🏃‍♂️ Phase 4: 구조 독립성 검증 및 로컬 테스트 (대기 중)
 - [v] `src/local_test.py`: 과금 및 외부 서버 의존성 없이 AI 로직만 검증할 모의(Mock) 리포팅 파일 껍데기 작성
-- [v] TA 쪽 서버 주소(CORE_API_URL) 발급 대기 (발급 시 `.env` 등록 후 연동)
-- [v] TA 쪽 `POST /internal/ai/result` 라우터와 통신 정상 응답 확인 (E2E)
-- [v] TA 쪽 `FAILED` 라우터와 통신 정상 응답 로직 교차 적용 완료
-- [v] 담당자 및 `due_date` JSON 포맷 교차 확인
 - [v] TA 측 SAA 계정의 SQS 큐 URL(`SQS_QUEUE_URL`) 발급 및 `.env` 적용 및 테스트 완료
+- [/] 통합 E2E 테스트 및 모니터링
+    - [x] SQS 메시지 수신 확인 (성공)
+    - [x] Core API /internal/ai/failed 500 에러 원인 파악 (UUID 형식 mismatch)
+    - [/] 크로스 계정 S3 접근 권한 최종 해결 (KMS 및 소유권 확인 중)
 
 ## 🚀 Phase 5: 인프라 배포 및 통합 연동 테스트 (예정)
 - [v] (TA/AA 협의) S3 버킷 권한 및 정보 확보 완료 (`meetus-audio-storage`), SQS 큐 실제 주소(`meetus-process-queue`) 획득 및 `.env` 적용 완료

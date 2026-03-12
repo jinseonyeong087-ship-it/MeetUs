@@ -30,6 +30,13 @@ class SQSListener:
             'sqs',
             region_name=config.AWS_REGION
         )
+        # 현재 엔진의 '진짜 신분'을 로그에 남깁니다.
+        try:
+            sts = boto3.client('sts', region_name=config.AWS_REGION)
+            identity = sts.get_caller_identity()
+            print(f"[SQS] Engine Identity: {identity['Arn']}")
+        except Exception as e:
+            print(f"[SQS] Identity check failed: {e}")
         
         # 환경변수(.env)에서 SQS 큐 URL 로드
         self.queue_url = config.SQS_QUEUE_URL 

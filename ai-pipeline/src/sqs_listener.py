@@ -154,3 +154,4 @@ class SQSListener:
 if __name__ == "__main__":
     listener = SQSListener()
     listener.start_polling()
+ 

@@ -8,7 +8,7 @@
   "taskRoleArn": "arn:aws:iam::818466672325:role/MeetUs-SA-TaskRole",
   "containerDefinitions": [
     {
-      "name": "ai-minutes-sa",
+      "name": "meetus-sa-container",
       "image": "818466672325.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-sa:latest",
       "essential": true,
       "logConfiguration": {

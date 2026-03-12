@@ -32,7 +32,7 @@
         { "name": "JWT_SECRET", "value": "h7Vn2Qp9Lx4mZt8Rk3sWc6Yd1Bf0Nj5U" },
         {
           "name": "CORS_ALLOW_ORIGINS",
-          "value": "http://localhost:8080,http://meetus-alb-278466579.ap-northeast-2.elb.amazonaws.com"
+          "value": "http://localhost:8080,http://ai-minutes-frontend-alb-826201136.ap-northeast-2.elb.amazonaws.com"
         }
       ],
       "logConfiguration": {

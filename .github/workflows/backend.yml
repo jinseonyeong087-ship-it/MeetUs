@@ -14,6 +14,7 @@ env:
   ECS_CLUSTER: ai-minutes-cluster
   ECS_SERVICE: ai-minutes-core-api-service
   ECS_TASK_DEFINITION_TEMPLATE: backend/deploy/taskdef-core-api.template.json
+  ECS_CONTAINER_NAME: core-api
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
@@ -53,30 +54,27 @@ jobs:
         run: |
           echo "Pushed image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
 
+      - name: Render ECS task definition
+        run: |
+          jq \
+            --arg image "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}" \
+            --arg containerName "${{ env.ECS_CONTAINER_NAME }}" \
+            '
+            .containerDefinitions[0].name = $containerName
+            | .containerDefinitions[0].image = $image
+            ' \
+            "${{ env.ECS_TASK_DEFINITION_TEMPLATE }}" > taskdef-core-api.json
+
       - name: Register ECS task definition
         id: register-task-def
-        shell: pwsh
         run: |
-          $imageUri = "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
-          $taskDefPath = "${{ env.ECS_TASK_DEFINITION_TEMPLATE }}"
-          $renderedTaskDefPath = Join-Path $env:RUNNER_TEMP "taskdef-rendered.json"
+          task_definition_arn=$(aws ecs register-task-definition \
+            --cli-input-json file://taskdef-core-api.json \
+            --region "${{ env.AWS_REGION }}" \
+            --query "taskDefinition.taskDefinitionArn" \
+            --output text)
 
-          Get-Content $taskDefPath -Raw `
-            | ConvertFrom-Json `
-            | ForEach-Object {
-                $_.containerDefinitions[0].image = $imageUri
-                $_
-              } `
-            | ConvertTo-Json -Depth 100 `
-            | Set-Content $renderedTaskDefPath
-
-          $taskDefArn = aws ecs register-task-definition `
-            --cli-input-json file://$renderedTaskDefPath `
-            --region "${{ env.AWS_REGION }}" `
-            --query "taskDefinition.taskDefinitionArn" `
-            --output text
-
-          "task_definition_arn=$taskDefArn" >> $env:GITHUB_OUTPUT
+          echo "task_definition_arn=$task_definition_arn" >> "$GITHUB_OUTPUT"
 
       - name: Deploy updated task definition
         run: |
@@ -92,3 +90,7 @@ jobs:
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_SERVICE }} \
             --region ${{ env.AWS_REGION }}
+
+      - name: Deployment summary
+        run: |
+          echo "Registered task definition: ${{ steps.register-task-def.outputs.task_definition_arn }}"

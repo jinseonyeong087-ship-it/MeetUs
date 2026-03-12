@@ -1,0 +1,32 @@
+{
+  "family": "meetus-sa-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::818466672325:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "ai-minutes-sa",
+      "image": "818466672325.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-sa:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/meetus-sa",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        { "name": "AWS_REGION", "value": "ap-northeast-2" },
+        { "name": "S3_BUCKET_NAME", "value": "meetus-audio-storage" },
+        {
+          "name": "SQS_QUEUE_URL",
+          "value": "https://sqs.ap-northeast-2.amazonaws.com/692681389373/meetus-process-queue"
+        },
+        { "name": "CORE_API_URL", "value": "http://meetus-alb-858165370.ap-northeast-2.elb.amazonaws.com" }
+      ]
+    }
+  ]
+}

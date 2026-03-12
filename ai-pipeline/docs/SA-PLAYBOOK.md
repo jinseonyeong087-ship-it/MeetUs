@@ -32,6 +32,24 @@
 4. **[테스트] 타 파트 연동 지연으로 인한 개발 블로킹 둥파**
    - **문제:** 프론트 음성 업로드나 백엔드 서버가 나오기 전까지, 단독으로 STT/LLM 결과물 컨디션 확인 및 테스트가 불가능한 상황 발생.
    - **해결:** 과금 방지 및 외부 의존도를 0%로 끊어낸 단독 로컬 모의 테스트 스크립트(`local_test.py`)를 작성하여 AI 성능을 사전 검증 완료.
+5. **[공통/배포] ECR 인증 토큰 조회 실패 (네트워크 경로 미확보)**
+   - **문제:** GitHub Actions 통과 후 ECS 서비스 기동 시 `unable to pull secrets or registry auth` 발생하며 컨테이너 기동 실패.
+   - **원인:** 프라이빗 망 연결 혹은 ECR로 향하는 아웃바운드 라우팅(VPC/NAT 게이트웨이) 누락으로 인한 타임아웃 현상.
+   - **해결:** ECS 태스크가 속한 서브넷의 아웃바운드 인터넷 연결 설정을 점검하여 네트워크 재조정 후 정상 배포 완료.
+6. **[공통/배포] ALB 헬스체크 타임아웃 및 컨테이너 무한 재시작 (보안그룹 오류)**
+   - **문제:** 배포 직후 Target Group 대상 상태가 `Unhealthy`로 표시되며 `Request timed out` 발생.
+   - **원인:** ECS 태스크 보안그룹(SG) 인바운드 규칙에 라우터(ALB)로부터의 트래픽 허용 누락.
+   - **해결:** ECS Task 전용 SG 방화벽 규칙을 신설하여 인바운드 소스를 ALB SG로 제한 오픈, 타겟 상태 `Healthy` 정상화 달성.
+7. **[공통/배포] CloudWatch 로그 그룹 누락 런타임 에러**
+   - **문제:** 배포 과정 중 `The specified log group does not exist` 에러 발생.
+   - **원인:** Task Definition에서 `awslogs` 드라이버로 지정한 CloudWatch Logs 그룹 폴더가 AWS 콘솔 상에 사전 생성되지 않음.
+8. **[공통/배포] DB 컬럼 길이 부족 (Varchar -> Text 마이그레이션)**
+   - **문제:** Bedrock이 생성한 요약 텍스트 길이가 `varchar(255)`를 초과하여 백엔드 DB 저장 시점(API Webhook)에서 Data Truncation 에러 발생.
+   - **조치:** `meetings.failure_reason` 및 요약 칼럼들의 데이터 타입을 용량 제한이 없는 `TEXT`로 Alter 쿼리를 적용(마이그레이션)하여 AI 대형 텍스트 저장 런타임 오류 방어.
+9. **[공통/배포] 컨테이너 크래시 무한루프 (.env 포맷 오타)**
+   - **문제:** 백엔드 도커 컨테이너가 기동 직후 `invalid env file: ... contains whitespaces` 에러를 뿜으며 즉시 종료됨.
+   - **원인:** 환경변수 주입 시 `DATABASE_URL = ...` 처럼 등호 양옆에 공백이 포함된 휴먼 에러 확인.
+   - **조치:** 도커 빌드/실행 환경변수 문법에 맞춰 공백을 제거(`DATABASE_URL=...`)하여 컨테이너 기동 안정화.
 
 ## 🛠️ 향후 작업 예정 로직 (Draft)
 - SQS 리스너 구현 시 `WaitTimeSeconds=20` 설정을 통해 비용 최적화(Long Polling) 적용 예정.
@@ -54,6 +72,7 @@
 ### 3️⃣ [서버리스 아키텍처] EKS 백지화 및 AWS ECS (Fargate) 전면 도입 (★ 핵심 의사결정)
 - **오버엔지니어링(Over-engineering) 해소:** 당초 설계된 무거운 쿠버네티스(EKS) 인프라 구성은 현재 팀 단위의 마이크로서비스(MSA) 규모 대비 학습 곡선이 높고 인프라 유지 관리 오버헤드가 크다고 판단했습니다.
 - **비용 최적화 및 운영 효율성 극대화:** 서버(EC2) 인스턴스를 직접 관리할 필요 없이, 도커 컨테이너를 올리기만 하면 CPU/Memory 리소스 단위로 과금되며 즉시 실행 가능한 서버리스 컨테이너 서비스인 **AWS ECS (Fargate)**로 아키텍처 방향성을 전면 수정하고 전사 문서를 100% 통합해냈습니다. `Desired Count`를 통해 1초 만에 0으로 낮추어 비용을 방어하거나 유연하게 스케일 아웃할 수 있는 유연성을 확보했습니다.
+- **AWS 네이티브 배포 사이클 완전 통제:** ECR에 푸시된 도커 이미지를 바탕으로 [태스크 정의(Task Definition) 생성 -> 클러스터 매니징 -> 서비스(Service) 프로비저닝 -> 퍼블릭 IP 및 CloudWatch 할당]에 이르는 컨테이너 구동 A to Z를 AWS 콘솔 상에서 직접 수동 배포 및 트러블슈팅하며 인프라 구축 역량을 입증했습니다.
 
 ### 4️⃣ [비동기 메시징 & 타 계정 통신] AWS SQS & Cross-Account (★ 핵심 트러블슈팅)
 - **비동기 롱 폴링(Long Polling) 설계:** AI 모델(Transcribe, Bedrock)의 처리는 수 분이 걸리므로, API 타임아웃(HTTP 504) 방지를 위해 백엔드와 SA 엔진 사이에 AWS SQS(`meetus-process-queue`) 브로커를 두는 비동기 아키텍처를 적용했습니다.
@@ -135,3 +154,13 @@
   - `SA-PLAYBOOK.md` 업데이트 완료
   - AWS IAM 정책 적용 완료: `PowerUser` 등의 광범위한 권한 대신, 리소스를 제한하는 Custom IAM Role 정책(Inline) 적용하여 보안성 대폭 강화 완료 (`iam_policy_least_privilege.json`)
   - **[보안 고도화]** `deploy-sa.yml`의 IAM 영구 Access Key 인증 방식을 **단기 자격 증명(OIDC Role Assuming)** 방식으로 업그레이드 완료 (GitHub Secrets `SA_AWS_ROLE_TO_ASSUME` 사용). 인라인 정책을 적용하여, 오직 `ai-minutes-sa` ECR 저장소에만 접근할 수 있도록 보안(최소 권한의 원칙)을 강화함. AWS CLI를 통해 ECR 저장소 생성을 완료함.
+
+### ➕ [추가: ADDITION]
+- **일시:** 2026-03-11
+- **대상 파일:** `ai-pipeline/docs/SA-PLAYBOOK.md`, `SA/README.md`
+- **상세 내용:** 
+  1. (삭제) 기존 작성되었던 ECS IAM Role 에러 기재 내역 삭제 (권한 누락 딜레이 후 자연해결되어 문서에서 제거).
+  2. (추가 통합) 타 부서(프론트/백엔드)의 트러블슈팅 문헌(`aws-deploy-evidence`)을 조사하여 공통으로 겪고 있는 `GitHub Actions/AWS ECS` 병목 경험 발췌 및 플레이북에 통합.
+     - 주요 삽입 항목: ECR 네트워크 권한 타임아웃 조치, CloudWatch Log Group 미생성 예외 처리, ALB 헬스체크와 보안그룹(Security Group) 인바운드 방화벽 펀칭 등.
+  3. (추가 완료) 전체 통합 파이프라인에서 누락되었던 **DB 마이그레이션(TEXT 타입 변경) 이슈** 및 백엔드 측의 **.env 파일 포맷(공백) 오류 크래시 장애 극복 과정**을 트러블슈팅 8, 9번 항목으로 추가.
+  4. 주환님의 ECS 생애 첫 수동 프로비저닝(클러스터 생성, 태스크 연동, 서비스 구동) 과정 성공 이력을 '인프라 트랙 레코드' 섹션에 문서화 달성.

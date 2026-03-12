@@ -43,3 +43,12 @@
 2. **AWS Cross-Account(타 계정 연동) 접근 권한**
    - **증상:** SQS 큐 및 S3 버킷이 TA 파트 계정에 위치하므로 기본적으로 접근(Access Denied) 불가.
    - **조치:** TA 담당자에게 SA 계정 ID 번호(`818466672325`)를 전달하여 정책(Policy)에 화이트리스트(Whitelist)를 등록하도록 가이드하여 구조적 결함을 극복했습니다.
+3. **[공통] GitHub Actions 배포 (ECR 네트워크 & 헬스체크 타임아웃)**
+   - **증상:** 프론트/백엔드 배포 과정에서 `unable to pull secrets or registry auth` 에러나 `Target Group Unhealthy`로 인한 무한 재시작 경험.
+   - **조치:** 퍼블릭망(NAT/VPC) 아웃바운드 검증 및 ECS Task 전용 보안 그룹(SG)에 ALB 인바운드 허용 정책을 직접 조율하여 네트워크 통신 단절을 팀 차원에서 해소함.
+4. **[공통] DB 요약 텍스트 길이 초과 (Data Truncation)**
+   - **증상:** Bedrock이 생성한 요약문 길이가 `varchar(255)`를 초과하여 백엔드 DB 저장 시 에러 발생.
+   - **조치:** 모델 제약 대신 DB 모델(Column)을 용량 무제한인 `TEXT` 타입으로 마이그레이션(Alter)하여 근본적인 데이터 유실 에러 방어.
+5. **[공통] 도커 환경변수(.env) 파싱 오류**
+   - **증상:** 백엔드 도커 기동 시 `invalid env file: ... contains whitespaces` 크래시 발생.
+   - **조치:** 환경변수 할당 규격(`DATABASE_URL=...`)에 맞춰 등호 주변 공백을 제거하여 컨테이너 기동 안정화.

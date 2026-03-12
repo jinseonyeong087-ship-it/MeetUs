@@ -8,8 +8,12 @@ on:
       - 'ai-pipeline/**' # 이 폴더 안의 파일이 변경될 때만 실행 (가장 핵심!)
 
 env:
-  AWS_REGION: ap-northeast-2 # 서울 리전
-  ECR_REPOSITORY: ai-minutes-sa # ECR 생성 시 지정할 이름
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: ai-minutes-sa
+  ECS_CLUSTER: meetus-sa-cluster
+  ECS_SERVICE: meetus-sa-task-service-jnq91d3c
+  ECS_TASK_DEFINITION_TEMPLATE: ai-pipeline/deploy/taskdef-sa.template.json
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build-and-push:
@@ -33,13 +37,53 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # 빌드는 ai-pipeline 폴더 내에서 진행해야 함
           cd ai-pipeline
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Register ECS task definition
+        id: register-task-def
+        shell: pwsh
+        run: |
+          $imageUri = "${{ steps.build-image.outputs.image }}"
+          $taskDefPath = "${{ env.ECS_TASK_DEFINITION_TEMPLATE }}"
+          $renderedTaskDefPath = Join-Path $env:RUNNER_TEMP "taskdef-rendered.json"
+
+          Get-Content $taskDefPath -Raw `
+            | ConvertFrom-Json `
+            | ForEach-Object {
+                $_.containerDefinitions[0].image = $imageUri
+                $_
+              } `
+            | ConvertTo-Json -Depth 100 `
+            | Set-Content $renderedTaskDefPath
+
+          $taskDefArn = aws ecs register-task-definition `
+            --cli-input-json file://$renderedTaskDefPath `
+            --region "${{ env.AWS_REGION }}" `
+            --query "taskDefinition.taskDefinitionArn" `
+            --output text
+
+          "task_definition_arn=$taskDefArn" >> $env:GITHUB_OUTPUT
+
+      - name: Deploy updated task definition
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task-def.outputs.task_definition_arn }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for ECS service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }}

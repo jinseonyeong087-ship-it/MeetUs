@@ -226,4 +226,190 @@ aws ecs create-service `
 - backend GitHub Actions workflow를 CodeDeploy 배포 생성 방식으로 수정 완료
 - IAM 권한 보강 및 실제 Actions 배포 성공 여부는 후속 확인 단계로 남음
 
+## 9) 재구성 및 재시도 증적
+
+### 9.1 1차 CodeDeploy 배포 실패 확인
+
+- 최초 blue/green 배포 ID:
+  - `d-Y9JL7QFEH`
+- 증상:
+  - CodeDeploy 배포가 50%에서 장시간 정체
+  - 대체 작업 세트가 트래픽을 받지 못함
+- ECS 서비스 이벤트 확인 결과:
+
+```text
+ResourceInitializationError: unable to pull secrets or registry auth
+The task cannot pull registry auth from Amazon ECR
+GetAuthorizationToken ... i/o timeout
+```
+
+- 해석:
+  - green task set이 ECR 인증 토큰을 가져오지 못해 컨테이너 이미지를 pull하지 못함
+  - 그 결과 대체 작업 세트가 정상 기동하지 못해 CodeDeploy 배포가 진행 중 정체
+
+### 9.2 자동 롤백 확인
+
+- 자동 롤백 배포 ID:
+  - `d-7VN9RPGEH`
+- 확인 내용:
+  - CodeDeploy가 실패한 배포 `d-Y9JL7QFEH`에 대해 자동 롤백 수행
+  - 원래 작업 세트로 트래픽 100% 복구
+- 배포 상세 문구:
+
+```text
+This is a rollback deployment triggered automatically
+to roll back the deployment d-Y9JL7QFEH
+```
+
+### 9.3 CodeDeploy 리소스 정리 및 재생성
+
+- 1차 시도 실패 후 수행한 정리:
+  - CodeDeploy application `ai-minutes-backend-codedeploy-app` 삭제
+  - CodeDeploy 전용 ECS 서비스 `ai-minutes-core-api-codedeploy-service` 삭제
+  - green target group `meetus-core-api-green-tg` 삭제
+
+- 이후 재생성:
+  - green target group `meetus-core-api-green-tg` 재생성
+  - CodeDeploy application `ai-minutes-backend-codedeploy-app` 재생성
+  - CodeDeploy deployment group `ai-minutes-backend-deployment-group` 재생성
+
+### 9.4 CodeDeploy 전용 ECS 서비스 재생성
+
+- 재생성 서비스:
+  - `ai-minutes-core-api-codedeploy-service`
+- 사용 task definition revision:
+  - `ai-minutes-core-api-task:10`
+- 재생성 시 네트워크 설정:
+  - subnets:
+    - `subnet-000d0cd4984fc695f`
+    - `subnet-08313de4d92e33a50`
+  - security group:
+    - `sg-025400a8c8b50c4de`
+  - `assignPublicIp=ENABLED`
+
+- 사용 명령:
+
+```powershell
+aws ecs create-service `
+  --cluster ai-minutes-cluster `
+  --service-name ai-minutes-core-api-codedeploy-service `
+  --task-definition ai-minutes-core-api-task:10 `
+  --desired-count 1 `
+  --launch-type FARGATE `
+  --deployment-controller type=CODE_DEPLOY `
+  --load-balancers "targetGroupArn=arn:aws:elasticloadbalancing:ap-northeast-2:692681389373:targetgroup/meetus-core-api-tg/04106226faefaa76,containerName=core-api,containerPort=8000" `
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-000d0cd4984fc695f,subnet-08313de4d92e33a50],securityGroups=[sg-025400a8c8b50c4de],assignPublicIp=ENABLED}" `
+  --platform-version LATEST `
+  --health-check-grace-period-seconds 120 `
+  --region ap-northeast-2
+```
+
+- 재생성 후 ECS 이벤트 확인:
+  - task 시작 성공
+  - `meetus-core-api-tg`에 대상 등록 성공
+  - service `STEADY_STATE` 도달
+
+### 9.5 GitHub Actions IAM 권한 추가 보강
+
+- backend workflow 재실행 중 순차적으로 확인된 CodeDeploy 권한 부족:
+  - `codedeploy:CreateDeployment`
+  - `codedeploy:GetDeploymentConfig`
+  - `codedeploy:RegisterApplicationRevision`
+
+- 최종적으로 GitHub Actions role `GitHubActions-TA-BackendDeploy`에 CodeDeploy 권한을 포함한 단일 정책 적용
+
+## 10) 최종 blue/green 배포 진행 증적
+
+- 재시도 배포 ID:
+  - `d-YN2J2JHEH`
+- 확인 시점 상태:
+  - 1단계 `대체 작업 세트 배포`: 성공
+  - 2단계 `프로덕션 트래픽 전환`: 성공
+  - 대체 작업 세트 트래픽: `100%`
+  - 원본 작업 세트 트래픽: `0%`
+  - 3단계 `5분 대기`: 진행 중
+  - 4단계 `원래 작업 세트 종료`: 대기 중
+
+- 해석:
+  - blue/green 배포 자체는 정상 흐름으로 진입
+  - 대체 작업 세트가 정상 기동 및 트래픽 전환까지 완료
+  - 남은 단계는 대기 후 원래 작업 세트 종료 처리
+
+## 11) 최종 상태 요약 (2026-03-12 추가 반영)
+
+- backend GitHub Actions workflow:
+  - CodeDeploy blue/green 배포 생성 방식으로 수정 완료
+- CodeDeploy application:
+  - 재생성 완료
+- CodeDeploy deployment group:
+  - 재생성 완료
+- green target group:
+  - 재생성 완료
+- CodeDeploy 전용 ECS 서비스:
+  - 재생성 완료 및 steady state 확인
+- GitHub Actions IAM 권한:
+  - ECR / ECS / PassRole / CodeDeploy 권한까지 통합 보강
+- blue/green 배포:
+  - 대체 작업 세트 기동 및 트래픽 전환 성공 확인
+  - 최종 종료 단계만 남은 상태로 확인
+
 ---
+
+## 12) `/meetings/{id}/process` SQS 전송 로직 추가
+
+### 12.1 문제 확인
+
+- SA 연동 점검 중 아래 현상 확인
+  - 업로드 이후 회의 상태는 `PROCESSING`으로 변경됨
+  - 그러나 SQS `meetus-process-queue` 메시지 증가는 확인되지 않음
+- 원인 분석 결과:
+  - [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py) 의 `/meetings/{meeting_id}/process`
+  - [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py) 의 `/meetings/{meeting_id}/retry`
+  - 두 엔드포인트 모두 기존에는 회의 상태만 `PROCESSING`으로 바꾸고 DB commit만 수행
+  - 실제 `boto3` SQS `send_message` 호출 로직은 없었음
+
+### 12.2 코드 보완
+
+- [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py)에 아래 내용 추가
+  - `boto3` SQS client 생성 helper
+  - `SQS_QUEUE_URL`, `AWS_REGION` 환경변수 사용
+  - 공통 함수 `_enqueue_meeting_processing(...)`
+  - 공통 함수 `_set_processing_and_enqueue(...)`
+- `/process`, `/retry`는 공통 함수 호출 방식으로 변경
+
+### 12.3 SQS 메시지 payload
+
+- 큐 전송 본문에 포함되도록 구성한 값
+  - `meeting_id`
+  - `audio_s3_key`
+  - `workspace_id`
+  - `title`
+
+### 12.4 예외 처리
+
+- `SQS_QUEUE_URL` 미설정 시 500 반환
+- `audio_s3_key`가 없는 경우 400 반환
+- SQS 전송 실패 시 502 반환
+- 전송 실패 시 회의 상태를 이전 상태로 복구하도록 처리
+
+### 12.5 로컬 검증
+
+- Python 문법 검증 수행
+
+```powershell
+@'
+import py_compile
+py_compile.compile(r'backend/app/routers/meeting_router.py', doraise=True)
+print('ok')
+'@ | python -
+```
+
+- 결과: `ok`
+
+### 12.6 후속 확인 포인트
+
+- backend 재배포 후 아래 순서로 실제 연동 확인 가능
+  - `/meetings/{id}/process` 호출
+  - 응답 `{"status":"PROCESSING"}` 확인
+  - SQS `meetus-process-queue` 메시지 증가 확인
+  - SA consumer 로그 또는 backend 내부 result/failed 처리 로그 확인

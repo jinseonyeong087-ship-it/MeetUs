@@ -127,7 +127,10 @@ function updateStatus(meeting) {
   const displayStatus = meeting.displayStatus || meeting.status;
   const statusMeta = getDisplayStatusMeta(displayStatus);
   statusLabelEl.textContent = statusMeta.label;
-  statusDescriptionEl.textContent = statusMeta.description || meeting.summary;
+  statusDescriptionEl.textContent =
+    (displayStatus === 'FAILED' ? meeting.failureReason : null) ||
+    statusMeta.description ||
+    meeting.summary;
   statusBannerEl.className = `card stage-${displayStatus}`;
   retryBtn.classList.toggle('hidden', displayStatus !== 'FAILED');
 }

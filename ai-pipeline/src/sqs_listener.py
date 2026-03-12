@@ -12,6 +12,11 @@ from src.core.stt_processor import STTProcessor
 from src.core.llm_processor import LLMProcessor
 from src.network.api_client import APIClient
 
+class PipelineProcessingError(Exception):
+    def __init__(self, message: str, failure_reported: bool):
+        super().__init__(message)
+        self.failure_reported = failure_reported
+
 class SQSListener:
     """
     AWS SQS를 24시간 실시간 모니터링하며(Long Polling), 
@@ -74,12 +79,14 @@ class SQSListener:
             
         except Exception as e:
             print(f"[PIPELINE_ERROR] Fatal error during pipeline execution: {e}")
+            failure_reported = False
             if 'meeting_id' in locals() and meeting_id:
                 try:
                     self.api.submit_failed_status(meeting_id, str(e))
+                    failure_reported = True
                 except Exception as api_err:
                     print(f"[API_ERROR] 잔여 FAILED 통보 중 오류 발생: {api_err}")
-            raise e
+            raise PipelineProcessingError(str(e), failure_reported) from e
 
     def start_polling(self):
         """
@@ -114,14 +121,20 @@ class SQSListener:
                             QueueUrl=self.queue_url,
                             ReceiptHandle=receipt_handle
                         )
-                    except Exception as e:
+                    except PipelineProcessingError as e:
                         # 무한 루프 방지: 백엔드에 '실패' 보고가 성공했다면 SQS에서 메시지를 제거합니다.
                         # (ID 오타 등으로 보고조차 실패한 경우는 재시도하도록 둡니다.)
-                        print(f"[SQS_FAILURE] {e} -> Processing failed. Cleaning up message to prevent infinite retry.")
-                        self.sqs.delete_message(
-                            QueueUrl=self.queue_url,
-                            ReceiptHandle=receipt_handle
-                        )
+                        print(f"[SQS_FAILURE] {e}")
+                        if e.failure_reported:
+                            print("[SQS] Failure status delivered. Cleaning up message to prevent infinite retry.")
+                            self.sqs.delete_message(
+                                QueueUrl=self.queue_url,
+                                ReceiptHandle=receipt_handle
+                            )
+                        else:
+                            print("[SQS] Failure status was not delivered. Leaving message in queue for retry.")
+                    except Exception as e:
+                        print(f"[SQS_FAILURE] Unexpected error: {e} -> Leaving message in queue for retry.")
                         
             except KeyboardInterrupt:
                 print("[SQS] Termination signal received. Stopping listener...")

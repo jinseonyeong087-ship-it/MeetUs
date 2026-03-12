@@ -53,6 +53,7 @@ function normalizeMeeting(base, detail) {
   const localMeta = metaMap[base.meeting_id] || {};
   const createdAt = base.created_at || new Date().toISOString();
   const todos = detail?.todos || [];
+  const failureReason = detail?.meeting?.failure_reason || base.failure_reason || null;
 
   return {
     meetingId: base.meeting_id,
@@ -75,7 +76,7 @@ function normalizeMeeting(base, detail) {
       status: todo.status || 'PENDING',
       due_date: todo.due_date || null
     })),
-    failureReason: base.status === 'FAILED' ? '처리에 실패했습니다.' : null
+    failureReason: base.status === 'FAILED' ? failureReason || '처리에 실패했습니다.' : null
   };
 }
 
@@ -134,6 +135,7 @@ export async function getMeetingById(meetingId) {
       meeting_id: base.meeting_id || meetingId,
       title: base.title,
       status: base.status,
+      failure_reason: base.failure_reason,
       created_at: base.created_at
     },
     data

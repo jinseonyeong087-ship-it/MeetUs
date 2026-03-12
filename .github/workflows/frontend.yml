@@ -1,4 +1,3 @@
-# GitHub Actions workflow for building and deploying the frontend application to AWS ECS using CodeDeploy.
 name: frontend-ci-cd
 
 on:

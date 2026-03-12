@@ -14,7 +14,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/meetus-sa",
+          "awslogs-group": "/ecs/meetus-sa-container",
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }

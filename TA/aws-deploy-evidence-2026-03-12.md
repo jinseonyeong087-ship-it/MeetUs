@@ -153,7 +153,71 @@ aws ecs create-service `
 - backend workflow를 `main` 반영 후 실제 CodeDeploy 배포 생성 성공 여부 추가 확인 필요
 - 신규 CodeDeploy 서비스가 실제 배포 시 blue/green target group 전환을 정상 수행하는지 후속 검증 필요
 
-## 7) 현재 상태 요약
+## 7) GitHub Actions IAM 정책 통합안
+
+- 대상 role:
+  - `GitHubActions-TA-BackendDeploy`
+- 목적:
+  - 기존 분산된 inline policy(`TA-BackendDeployPolicy`, `RegisterTaskDefinition`, `PassRole`)를 단일 정책으로 정리
+  - backend blue/green workflow 수행에 필요한 ECR / ECS / PassRole / CodeDeploy 권한을 한 번에 관리
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrAuth",
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EcrPush",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:CompleteLayerUpload",
+        "ecr:DescribeRepositories",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
+      ],
+      "Resource": "arn:aws:ecr:ap-northeast-2:692681389373:repository/ai-minutes-core-api"
+    },
+    {
+      "Sid": "EcsReadAndDeploy",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+        "ecs:RegisterTaskDefinition"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowPassEcsTaskRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::692681389373:role/ecsTaskExecutionRole",
+        "arn:aws:iam::692681389373:role/ai-minutes-core-api-task-role"
+      ]
+    },
+    {
+      "Sid": "CodeDeployBlueGreen",
+      "Effect": "Allow",
+      "Action": [
+        "codedeploy:CreateDeployment",
+        "codedeploy:GetDeployment",
+        "codedeploy:GetDeploymentGroup"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+## 8) 현재 상태 요약
 
 - backend blue/green용 CodeDeploy application 생성 완료
 - backend blue/green용 deployment group 생성 완료
@@ -161,3 +225,5 @@ aws ecs create-service `
 - CodeDeploy controller 기반 ECS 서비스 생성 완료
 - backend GitHub Actions workflow를 CodeDeploy 배포 생성 방식으로 수정 완료
 - IAM 권한 보강 및 실제 Actions 배포 성공 여부는 후속 확인 단계로 남음
+
+---

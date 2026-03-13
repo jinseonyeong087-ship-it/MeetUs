@@ -210,8 +210,14 @@ AI Minutes 프로젝트는 사용자가 회의 음성 파일을 업로드하면 
 - [ECS Service](./img/ECS_service.png)
 
 ### 8.3 화면 산출물
+대시보드
+![초안](./img/dashboard.png)
 
-- [초안](./img/first.png)
+요약화면
+![요약화면](./img/summary.png)
+
+업로드
+![업로드](./img/upload.png)
 
 ---
 

@@ -68,6 +68,8 @@ on resource arn:aws:iam::692681389373:role/ai-minutes-core-api-task-role
 
 ## 4) CodeDeploy 리소스 생성 증적
 
+![alt text](image-3.png)
+
 ### 4.1 CodeDeploy Application 생성
 
 - 이름: `ai-minutes-backend-codedeploy-app`
@@ -352,64 +354,3 @@ aws ecs create-service `
 - blue/green 배포:
   - 대체 작업 세트 기동 및 트래픽 전환 성공 확인
   - 최종 종료 단계만 남은 상태로 확인
-
----
-
-## 12) `/meetings/{id}/process` SQS 전송 로직 추가
-
-### 12.1 문제 확인
-
-- SA 연동 점검 중 아래 현상 확인
-  - 업로드 이후 회의 상태는 `PROCESSING`으로 변경됨
-  - 그러나 SQS `meetus-process-queue` 메시지 증가는 확인되지 않음
-- 원인 분석 결과:
-  - [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py) 의 `/meetings/{meeting_id}/process`
-  - [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py) 의 `/meetings/{meeting_id}/retry`
-  - 두 엔드포인트 모두 기존에는 회의 상태만 `PROCESSING`으로 바꾸고 DB commit만 수행
-  - 실제 `boto3` SQS `send_message` 호출 로직은 없었음
-
-### 12.2 코드 보완
-
-- [backend/app/routers/meeting_router.py](/c:/workspace/4th-project/AI-Minutes/backend/app/routers/meeting_router.py)에 아래 내용 추가
-  - `boto3` SQS client 생성 helper
-  - `SQS_QUEUE_URL`, `AWS_REGION` 환경변수 사용
-  - 공통 함수 `_enqueue_meeting_processing(...)`
-  - 공통 함수 `_set_processing_and_enqueue(...)`
-- `/process`, `/retry`는 공통 함수 호출 방식으로 변경
-
-### 12.3 SQS 메시지 payload
-
-- 큐 전송 본문에 포함되도록 구성한 값
-  - `meeting_id`
-  - `audio_s3_key`
-  - `workspace_id`
-  - `title`
-
-### 12.4 예외 처리
-
-- `SQS_QUEUE_URL` 미설정 시 500 반환
-- `audio_s3_key`가 없는 경우 400 반환
-- SQS 전송 실패 시 502 반환
-- 전송 실패 시 회의 상태를 이전 상태로 복구하도록 처리
-
-### 12.5 로컬 검증
-
-- Python 문법 검증 수행
-
-```powershell
-@'
-import py_compile
-py_compile.compile(r'backend/app/routers/meeting_router.py', doraise=True)
-print('ok')
-'@ | python -
-```
-
-- 결과: `ok`
-
-### 12.6 후속 확인 포인트
-
-- backend 재배포 후 아래 순서로 실제 연동 확인 가능
-  - `/meetings/{id}/process` 호출
-  - 응답 `{"status":"PROCESSING"}` 확인
-  - SQS `meetus-process-queue` 메시지 증가 확인
-  - SA consumer 로그 또는 backend 내부 result/failed 처리 로그 확인

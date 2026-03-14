@@ -170,13 +170,13 @@ uvicorn app.main:app --reload
 
 백엔드에서 사용하는 회의 상태값은 아래와 같다.
 
-| 상태 | 의미 |
-| --- | --- |
-| `CREATED` | 회의 메타데이터 생성 완료 |
-| `UPLOADED` | 오디오 업로드 완료 |
-| `PROCESSING` | AI 처리 진행 중 |
-| `COMPLETED` | 결과 저장 완료 |
-| `FAILED` | AI 처리 실패 |
+| 상태         | 의미                      |
+| ------------ | ------------------------- |
+| `CREATED`    | 회의 메타데이터 생성 완료 |
+| `UPLOADED`   | 오디오 업로드 완료        |
+| `PROCESSING` | AI 처리 진행 중           |
+| `COMPLETED`  | 결과 저장 완료            |
+| `FAILED`     | AI 처리 실패              |
 
 상태 enum은 [backend/app/enums/meeting_status.py](../backend/app/enums/meeting_status.py)에 있다.
 
@@ -228,14 +228,70 @@ AI 처리 서비스는 SQS 메시지를 읽어 전사, 요약, 결정사항, To-
 
 ## 9. 배포
 
-백엔드 배포는 Docker 이미지 빌드 후 ECR push, ECS Task Definition 등록, CodeDeploy 배포 순서로 진행된다.
+백엔드 배포는 `ECR + ECS Fargate + CodeDeploy` 기준으로 구성되어 있다.
 
-관련 파일:
+### 9.1 사전 준비
 
+- AWS CLI 설치 및 인증
+- Docker 설치
+- ECR 리포지토리 생성
+- ECS Cluster / Service 준비
+- CodeDeploy Application / Deployment Group 준비
+- GitHub Actions OIDC Role 준비
+
+### 9.2 이미지 빌드 / 푸시
+
+예시:
+
+```bash
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com
+docker build -t ai-minutes-core-api:latest ./backend
+docker tag ai-minutes-core-api:latest <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-api:latest
+docker push <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-api:latest
+```
+
+### 9.3 값 수정 포인트
+
+- [backend/deploy/taskdef-core-api.template.json](../backend/deploy/taskdef-core-api.template.json)의 이미지 경로
+- [backend/deploy/taskdef-core-api.template.json](../backend/deploy/taskdef-core-api.template.json)의 환경 변수
+- [backend/deploy/taskdef-core-api.template.json](../backend/deploy/taskdef-core-api.template.json)의 IAM Role, 로그 그룹, 헬스체크
+- [backend/deploy/appspec-core-api.yaml](../backend/deploy/appspec-core-api.yaml)의 `ContainerName`, `ContainerPort`
+- [.github/workflows/backend.yml](../.github/workflows/backend.yml)의 ECR / ECS / CodeDeploy 변수와 GitHub Secret
+
+### 9.4 수동 배포 흐름
+
+1. Docker 이미지를 빌드하고 ECR에 push 한다.
+2. `taskdef-core-api.template.json`을 기준으로 새 Task Definition을 생성한다.
+3. `appspec-core-api.yaml`에 새 Task Definition ARN을 반영한다.
+4. CodeDeploy로 ECS 배포를 생성한다.
+5. 배포 후 ECS 서비스 상태와 ALB 응답을 확인한다.
+
+### 9.5 GitHub Actions 배포
+
+이 저장소는 백엔드 배포용 GitHub Actions 워크플로를 사용한다.
+
+- 워크플로 파일: [.github/workflows/backend.yml](../.github/workflows/backend.yml)
 - Dockerfile: [backend/Dockerfile](../backend/Dockerfile)
 - Task definition template: [backend/deploy/taskdef-core-api.template.json](../backend/deploy/taskdef-core-api.template.json)
 - AppSpec template: [backend/deploy/appspec-core-api.yaml](../backend/deploy/appspec-core-api.yaml)
-- GitHub Actions: [.github/workflows/backend.yml](../.github/workflows/backend.yml)
+
+워크플로 흐름은 다음과 같다.
+
+1. `main` 브랜치에 `backend/**` 변경이 반영되면 `backend-ci-cd`가 실행된다.
+2. GitHub Actions가 OIDC로 AWS Role을 Assume 한다.
+3. Docker 이미지를 빌드하고 ECR에 push 한다.
+4. Task Definition 템플릿에 새 이미지 URI를 반영한다.
+5. ECS Task Definition을 등록한다.
+6. AppSpec을 렌더링한 뒤 CodeDeploy 배포를 생성한다.
+
+### 9.6 배포 확인
+
+예시:
+
+```bash
+aws ecs describe-services --cluster ai-minutes-cluster --services ai-minutes-core-api-codedeploy-service --region ap-northeast-2
+aws deploy list-deployments --application-name ai-minutes-backend-codedeploy-app --deployment-group-name ai-minutes-backend-deployment-group --region ap-northeast-2
+```
 
 배포 증적 문서:
 

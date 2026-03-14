@@ -90,6 +90,8 @@ docker push 692681389373.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-ap
 
 ## 4) IAM 권한 관련 증적
 
+![alt text](image-2.png)
+
 - `iam:PassRole` 인라인 정책 생성 확인
   - 정책명: `AIMinutes-AllowPassRole-ECS`
   - 대상 Role:
@@ -100,6 +102,8 @@ docker push 692681389373.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-ap
   - `AmazonEC2ContainerRegistryPowerUser`
 
 ## 5) ECS 서비스 생성 화면 설정 증적 (콘솔)
+
+![alt text](image-1.png)
 
 - Cluster: `ai-minutes-cluster`
 - Launch type: `FARGATE`
@@ -113,6 +117,7 @@ docker push 692681389373.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-ap
   - Health Check Path `/docs`
 
 네트워킹 이슈 확인:
+
 - 동일 AZ(`ap-northeast-2a`) 서브넷 2개 선택 시 오류 발생 확인
 - 조치: AZ 중복 없이 서브넷 재선택 필요
 
@@ -128,4 +133,3 @@ docker push 692681389373.dkr.ecr.ap-northeast-2.amazonaws.com/ai-minutes-core-ap
 - ECS 클러스터 생성: 완료
 - Task Definition 등록: 완료
 - ECS 서비스 생성: 진행 중 (네트워킹/ALB 설정 최종 확인 단계)
-

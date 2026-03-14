@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860" role="img" aria-labelledby="title desc">
+  <title id="title">TA Backend AI Processing Flow</title>
+  <desc id="desc">AWS-style flow diagram for the TA backend showing user requests, Core API, S3, SQS, AI processing, and PostgreSQL persistence.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f8fb; }
+      .panel { fill: #ffffff; stroke: #d0d7de; stroke-width: 1.5; }
+      .card { fill: #ffffff; stroke: #c7d0d9; stroke-width: 2; }
+      .aws { fill: #ff9900; }
+      .user { fill: #2563eb; }
+      .api { fill: #0f766e; }
+      .s3 { fill: #15803d; }
+      .sqs { fill: #7c3aed; }
+      .ai { fill: #ea580c; }
+      .db { fill: #475569; }
+      .ok { fill: #16a34a; }
+      .fail { fill: #dc2626; }
+      .title { font: 700 30px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: #667085; }
+      .section { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: #1f2937; }
+      .svc { font: 700 18px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .sub { font: 500 13px 'Segoe UI', Arial, sans-serif; fill: #667085; }
+      .step { font: 600 13px 'Segoe UI', Arial, sans-serif; fill: #344054; }
+      .muted { font: 500 12px 'Segoe UI', Arial, sans-serif; fill: #98a2b3; }
+      .flow { stroke: #667085; stroke-width: 3; fill: none; marker-end: url(#arrow); }
+      .flow-ok { stroke: #16a34a; stroke-width: 3.2; fill: none; marker-end: url(#arrowOk); }
+      .flow-fail { stroke: #dc2626; stroke-width: 3.2; fill: none; marker-end: url(#arrowFail); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#667085"/>
+    </marker>
+    <marker id="arrowOk" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowFail" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1500" height="860" rx="24"/>
+  <rect class="panel" x="28" y="24" width="1444" height="812" rx="24"/>
+
+  <text class="title" x="56" y="66">TA Backend AI Processing Flow</text>
+  <text class="subtitle" x="56" y="92">AWS-style backend flow for meeting upload, asynchronous AI processing, and result persistence</text>
+
+  <text class="section" x="64" y="140">Request Path</text>
+  <text class="section" x="64" y="530">Result Path</text>
+
+  <!-- User -->
+  <g transform="translate(60,180)">
+    <rect class="card" x="0" y="0" width="210" height="150" rx="20"/>
+    <circle class="user" cx="42" cy="42" r="18"/>
+    <path class="user" d="M20 84c8-18 36-18 44 0v6H20z"/>
+    <text class="svc" x="76" y="40">User / Frontend</text>
+    <text class="sub" x="76" y="64">meeting create</text>
+    <text class="sub" x="76" y="84">upload request</text>
+    <text class="sub" x="76" y="104">result query</text>
+    <text class="muted" x="20" y="132">Client request origin</text>
+  </g>
+
+  <!-- Core API -->
+  <g transform="translate(330,180)">
+    <rect class="card" x="0" y="0" width="230" height="150" rx="20"/>
+    <rect class="api" x="22" y="22" width="42" height="42" rx="10"/>
+    <rect fill="#ffffff" x="31" y="31" width="24" height="6" rx="3"/>
+    <rect fill="#ffffff" x="31" y="42" width="24" height="6" rx="3"/>
+    <rect fill="#ffffff" x="31" y="53" width="16" height="6" rx="3"/>
+    <text class="svc" x="82" y="40">Core API</text>
+    <text class="sub" x="82" y="64">FastAPI backend</text>
+    <text class="sub" x="82" y="84">auth / meetings / todos</text>
+    <text class="sub" x="82" y="104">internal callbacks</text>
+    <text class="muted" x="22" y="132">Main application service</text>
+  </g>
+
+  <!-- S3 -->
+  <g transform="translate(620,180)">
+    <rect class="card" x="0" y="0" width="190" height="150" rx="20"/>
+    <rect class="aws" x="20" y="18" width="50" height="12" rx="6"/>
+    <path class="s3" d="M27 58h36l-4 40H31z"/>
+    <ellipse class="s3" cx="45" cy="58" rx="18" ry="6"/>
+    <ellipse fill="#ffffff" opacity="0.25" cx="45" cy="74" rx="14" ry="4"/>
+    <text class="svc" x="84" y="42">Amazon S3</text>
+    <text class="sub" x="84" y="66">audio storage</text>
+    <text class="sub" x="84" y="86">presigned upload</text>
+    <text class="muted" x="20" y="132">Object storage</text>
+  </g>
+
+  <!-- SQS -->
+  <g transform="translate(870,180)">
+    <rect class="card" x="0" y="0" width="190" height="150" rx="20"/>
+    <rect class="aws" x="20" y="18" width="50" height="12" rx="6"/>
+    <rect class="sqs" x="24" y="44" width="42" height="34" rx="8"/>
+    <path fill="#ffffff" d="M31 52h28v4H31zm0 9h28v4H31zm0 9h18v4H31z"/>
+    <text class="svc" x="84" y="42">Amazon SQS</text>
+    <text class="sub" x="84" y="66">async message queue</text>
+    <text class="sub" x="84" y="86">AI job dispatch</text>
+    <text class="muted" x="20" y="132">Queue service</text>
+  </g>
+
+  <!-- AI -->
+  <g transform="translate(1120,180)">
+    <rect class="card" x="0" y="0" width="260" height="150" rx="20"/>
+    <rect class="aws" x="20" y="18" width="50" height="12" rx="6"/>
+    <circle class="ai" cx="45" cy="60" r="19"/>
+    <path fill="#ffffff" d="M45 47l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z"/>
+    <text class="svc" x="82" y="40">AI Processing Service</text>
+    <text class="sub" x="82" y="64">transcript generation</text>
+    <text class="sub" x="82" y="84">summary / decisions</text>
+    <text class="sub" x="82" y="104">todo extraction</text>
+    <text class="muted" x="20" y="132">Async worker</text>
+  </g>
+
+  <!-- DB -->
+  <g transform="translate(560,610)">
+    <rect class="card" x="0" y="0" width="290" height="160" rx="20"/>
+    <rect class="aws" x="20" y="18" width="50" height="12" rx="6"/>
+    <ellipse class="db" cx="46" cy="54" rx="20" ry="8"/>
+    <path class="db" d="M26 54v34c0 5 9 9 20 9s20-4 20-9V54z"/>
+    <ellipse class="db" cx="46" cy="88" rx="20" ry="8"/>
+    <text class="svc" x="84" y="42">PostgreSQL</text>
+    <text class="sub" x="84" y="66">meeting metadata</text>
+    <text class="sub" x="84" y="86">transcript / summary</text>
+    <text class="sub" x="84" y="106">decisions / todos</text>
+    <text class="muted" x="20" y="140">Primary relational database</text>
+  </g>
+
+  <!-- Success -->
+  <g transform="translate(980,560)">
+    <rect class="card" x="0" y="0" width="330" height="92" rx="18"/>
+    <circle class="ok" cx="36" cy="46" r="18"/>
+    <path fill="#ffffff" d="M28 46l5 5 11-12 4 4-15 16-9-9z"/>
+    <text class="svc" x="68" y="40">Success Callback</text>
+    <text class="sub" x="68" y="64">POST /internal/ai/result</text>
+  </g>
+
+  <!-- Failure -->
+  <g transform="translate(980,680)">
+    <rect class="card" x="0" y="0" width="330" height="92" rx="18"/>
+    <circle class="fail" cx="36" cy="46" r="18"/>
+    <path fill="#ffffff" d="M29 39l14 14m0-14L29 53" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+    <text class="svc" x="68" y="40">Failure Callback</text>
+    <text class="sub" x="68" y="64">POST /internal/ai/failed</text>
+  </g>
+
+  <!-- Main arrows -->
+  <path class="flow" d="M270 220 L330 220"/>
+  <text class="step" x="272" y="208">1. Create meeting</text>
+
+  <path class="flow" d="M270 270 L330 270"/>
+  <text class="step" x="248" y="360">2. Request upload URL</text>
+
+  <path class="flow" d="M560 220 L620 220"/>
+  <text class="step" x="566" y="208">3. Generate presigned URL</text>
+
+  <path class="flow" d="M165 330 L165 390 L715 390 L715 330"/>
+  <text class="step" x="408" y="382">4. Upload audio file to S3</text>
+
+  <path class="flow" d="M270 320 L445 320 L445 330"/>
+  <text class="step" x="286" y="312">5. Upload complete</text>
+
+  <path class="flow" d="M270 360 L445 360 L445 330"/>
+  <text class="step" x="300" y="352">6. Start processing</text>
+
+  <path class="flow" d="M810 220 L870 220"/>
+  <text class="step" x="810" y="208">7. Enqueue job</text>
+
+  <path class="flow" d="M1060 220 L1120 220"/>
+  <text class="step" x="1070" y="208">8. Consume queue</text>
+
+  <!-- Result arrows -->
+  <path class="flow-ok" d="M1250 330 L1250 560"/>
+  <text class="step" x="1262" y="456">9. Success result</text>
+
+  <path class="flow-fail" d="M1290 330 L1290 680"/>
+  <text class="step" x="1302" y="520">10. Failure result</text>
+
+  <path class="flow-ok" d="M980 606 L850 606"/>
+  <text class="step" x="860" y="594">Save transcript, summary, decisions, todos</text>
+
+  <path class="flow-fail" d="M980 726 L850 726"/>
+  <text class="step" x="865" y="714">Update FAILED status and failure_reason</text>
+
+  <path class="flow" d="M980 606 L920 606 L920 690 L850 690"/>
+  <path class="flow" d="M980 726 L920 726 L920 690 L850 690"/>
+  <path class="flow" d="M850 690 L560 690"/>
+  <text class="step" x="704" y="678">Persist backend state</text>
+
+  <path class="flow" d="M705 610 L705 330"/>
+  <text class="step" x="720" y="472">Meeting status update</text>
+</svg>

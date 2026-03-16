@@ -1,6 +1,6 @@
-# AI-Minutes
+# MeetUs
 
-# AI Meeting Summary & To-Do Archive System (MeetUs)
+# AI Meeting Summary & To-Do Archive System
 
 AI 기반으로 회의 음성 파일을 분석하여 **회의 요약과 개인별 To-Do를 자동 생성하고 아카이브하는 시스템**입니다.  
 
